@@ -1,0 +1,214 @@
+---
+title: Gacha Commands
+description: Summon characters, view banners, and manage your pulls in Project Stardust
+---
+
+## Summoning Characters
+
+### pull
+
+Pull 1 or 10 characters from the gacha system.
+
+```bash
+!pull [amount]
+```
+
+<ParamField path="amount" type="integer" default="1">
+  Number of pulls to perform. Must be either `1` or `10`.
+</ParamField>
+
+**Aliases:** `summon`
+
+**Cost:**
+- 1 pull = 1,000 Gems
+- 10 pulls = 10,000 Gems
+
+**Rarity Rates:**
+- SSR: 2%
+- SR: 11% (13% total)
+- R: 87%
+
+**Examples:**
+```bash
+!pull        # Single pull
+!pull 10     # 10-pull with enhanced display
+!summon 10   # Using alias
+```
+
+<Note>
+10-pulls display a special grid image showing all characters obtained.
+</Note>
+
+### starter
+
+Claim your one-time starter pack with a guaranteed SSR.
+
+```bash
+!starter
+```
+
+**Rewards:**
+- 1 guaranteed SSR character
+- 9 additional random pulls
+
+**Important:** This can only be claimed once per account.
+
+---
+
+## Banner System
+
+### banner
+
+View the currently active gacha banner with rate-up characters.
+
+```bash
+!banner
+```
+
+Displays:
+- Banner name
+- Featured rate-up characters
+- Banner end time
+- Rate-up chances
+
+**Rate-Up System:**
+- When you pull an SSR or SR, there's a chance it will be a rate-up character
+- UR characters on rate-up have a 0.5% chance
+- Banner-specific characters have increased rates
+
+### spark
+
+Exchange 500 Banner Points for a guaranteed rate-up SSR.
+
+```bash
+!spark
+```
+
+**Aliases:** `pity_exchange`
+
+**Requirements:**
+- 500 Banner Points on the **current active banner**
+- Banner Points reset when a new banner starts
+
+**Banner Points:**
+- Earned: 1 point per pull
+- Tracks: Current banner only
+- Reset: When banner changes
+
+**How it works:**
+1. Accumulate 500 points by pulling on the current banner
+2. Use `!spark` to select from available SSR rate-up characters
+3. If only one SSR is featured, it's automatically selected
+4. If multiple SSRs are featured, you'll get a dropdown menu to choose
+
+<Warning>
+Banner Points are tied to a specific banner. If you switch to a new banner before reaching 500 points, your progress resets!
+</Warning>
+
+---
+
+## Understanding Rarities
+
+Characters are ranked by their popularity on AniList:
+
+| Rarity | Rank Range | Rate | Description |
+|--------|-----------|------|-------------|
+| **SSR** | 1-250 | 2% | Top-tier characters |
+| **SR** | 251-1500 | 11% | Mid-tier characters |
+| **R** | 1501-10000 | 87% | Common characters |
+
+### Power Calculation
+
+Character power is calculated based on:
+- **Base Power** - Determined by rank and favorites
+- **Dupe Level** - +5% per dupe (max +50%)
+- **Bond Level** - +0.5% per level (max +25%)
+- **Team Level** - +1% per level (global bonus)
+
+---
+
+## Gacha Currency
+
+### Earning Gems
+
+Gems can be obtained through:
+- Daily check-in: 1,500 gems
+- Daily battle tasks: Up to 11,000 gems
+- Expeditions: Passive gem generation
+- Scrapping duplicate characters
+- Achievements and events
+- Shop purchases (if enabled)
+
+### Checking Balance
+
+See [Progression Commands](/commands/progression#gems) for balance checking.
+
+---
+
+## Duplicate System
+
+### Auto-Scrap
+
+When you pull a character you already have at max dupe level (10):
+- **Automatic scrapping** occurs
+- You receive gems and coins based on rarity
+- The character is **not** added to inventory again
+
+### Scrap Values
+
+| Rarity | Gems | Coins |
+|--------|------|-------|
+| SSR | 1,000 | 100 |
+| SR | 500 | 25 |
+| R | 100 | 5 |
+
+---
+
+## Tips & Strategy
+
+<Tip>
+**Save for 10-pulls:** While single pulls work, 10-pulls provide a better visual experience and let you see all your results at once.
+</Tip>
+
+<Tip>
+**Watch for rate-up banners:** If there's a specific character you want, wait for them to be featured on a banner for increased chances.
+</Tip>
+
+<Tip>
+**Track your spark progress:** Your current spark points are shown when you pull. Plan ahead if you're close to 500 points!
+</Tip>
+
+<Warning>
+**Banner Points Reset:** Don't let your spark points go to waste. If a banner is ending soon and you're close to 500, consider pushing for it before the reset.
+</Warning>
+
+---
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="What happens if I don't have enough gems?">
+    The pull command will fail and show your current balance. No gems are deducted.
+  </Accordion>
+  
+  <Accordion title="Can I undo a pull?">
+    No, pulls are final. However, if there's a technical error, gems are automatically refunded.
+  </Accordion>
+  
+  <Accordion title="Do pity systems carry over between banners?">
+    No, Banner Points (spark system) reset when a new banner becomes active. Standard rarity rates always apply.
+  </Accordion>
+  
+  <Accordion title="What's the difference between rate-up and standard pool?">
+    Rate-up affects which specific characters you get within a rarity tier. The base rates (2% SSR, 11% SR, 87% R) don't change.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Commands
+
+- [`!inventory`](/commands/progression#inventory) - View pulled characters
+- [`!gems`](/commands/progression#gems) - Check gem balance
+- [`!shop`](/commands/progression#shop) - Buy specific characters
+- [`!daily`](/commands/progression#checkin) - Get daily gems

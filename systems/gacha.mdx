@@ -1,0 +1,240 @@
+---
+title: Gacha System
+description: Summon anime characters with the gacha system featuring rarity rates, pity mechanics, and limited banners
+---
+
+## Overview
+
+The gacha system allows you to summon anime characters from AniList with different rarities. Characters are ranked by popularity, and the system includes pity mechanics, limited-time banners with rate-ups, and a spark system for guaranteed pulls.
+
+## Rarity System
+
+Characters are assigned rarities based on their popularity rank on AniList:
+
+| Rarity | Rank Range | Pull Rate |
+|--------|------------|----------|
+| **SSR** | 1-250 | 2% |
+| **SR** | 251-1,500 | 11% (13% - 2%) |
+| **R** | 1,501-10,000 | 87% |
+
+The rarity determines a character's base power and scrap value.
+
+<Note>
+Rank 1 is the most popular character on AniList. Lower rank numbers = higher rarity.
+</Note>
+
+## Pull Costs
+
+```python
+GEMS_PER_PULL = 1000  # Cost per single pull
+```
+
+- **Single Pull**: 1,000 Gems
+- **10-Pull**: 10,000 Gems
+
+## Commands
+
+### Pull Characters
+
+<CodeGroup>
+```bash Single Pull
+!pull 1
+!summon 1
+```
+
+```bash 10-Pull
+!pull 10
+!summon 10
+```
+</CodeGroup>
+
+Pulls 1 or 10 characters from the gacha. If an active banner exists, pulls from that banner; otherwise uses the standard pool.
+
+<Warning>
+Only 1 or 10 pulls are allowed. Other amounts will be rejected.
+</Warning>
+
+### View Current Banner
+
+```bash
+!banner
+```
+
+Displays the currently active limited banner with featured characters and expiration time.
+
+### Starter Pack
+
+```bash
+!starter
+```
+
+Claims a one-time free 10-pull with **1 guaranteed SSR**. Available once per user.
+
+## Banner System
+
+Limited banners feature specific characters with increased pull rates.
+
+### Banner Structure
+
+Banners are stored in the database with these properties:
+
+```sql
+CREATE TABLE banners (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    rate_up_ids INTEGER[] NOT NULL,      -- Featured character IDs
+    rate_up_chance FLOAT DEFAULT 0.5,    -- 50% chance to get rate-up
+    spark_pity INTEGER DEFAULT 300,      -- Pulls needed for spark
+    is_active BOOLEAN DEFAULT FALSE,
+    end_timestamp BIGINT NOT NULL
+);
+```
+
+### Rate-Up Mechanics
+
+When pulling from a banner:
+
+1. **UR Check** (0.5% chance): If any featured characters have UR rarity (manually set), 0.5% chance to pull them
+2. **Standard Rarity Roll**: Determines SSR/SR/R using standard rates
+3. **Rate-Up Application**: If you get SSR or SR, 50% chance it's a featured character of that rarity
+4. **Fallback**: If no rate-up hits, pulls from standard pool
+
+<Tip>
+Banners automatically close when their `end_timestamp` expires.
+</Tip>
+
+## Spark System
+
+The spark system provides a pity counter that persists across pulls on the same banner.
+
+### How It Works
+
+```python
+async def process_spark_points(self, user_id, banner_id, amount):
+    # If banner changed, reset points to 0
+    if last_id != banner_id:
+        current_points = 0
+    
+    new_points = current_points + amount
+```
+
+- Each pull adds **1 spark point**
+- Default spark pity: **300 pulls** (configurable per banner)
+- Spark points **reset to 0** when switching banners
+- Points tracked in `users.banner_points` and `users.last_banner_id`
+
+<Warning>
+Spark points are banner-specific. If a new banner activates, your progress resets!
+</Warning>
+
+## Duplicate System
+
+Characters use a duplicate (dupe) system instead of separate copies:
+
+- **Max Dupe Level**: 10
+- **Power Bonus**: +5% per dupe level
+- **Auto-Scrap**: Characters at max dupes are automatically scrapped
+
+### Scrap Values
+
+When a character reaches max dupes (10), extras are scrapped for:
+
+| Rarity | Gems | Coins |
+|--------|------|-------|
+| R | 100 | 5 |
+| SR | 500 | 25 |
+| SSR | 10,000 | 500 |
+
+```python
+scrap_values = {"R": 100, "SR": 500, "SSR": 10000}
+scrap_coins_values = {"R": 5, "SR": 25, "SSR": 500}
+```
+
+## Pull Mechanics
+
+### Rarity Determination
+
+```python
+def get_rarity_and_page(self, guaranteed_ssr=False):
+    if guaranteed_ssr: 
+        return "SSR", random.randint(1, 250)
+    
+    roll = random.random() * 100
+    if roll < 2:  return "SSR", random.randint(1, 250)
+    if roll < 13: return "SR", random.randint(251, 1500)
+    return "R", random.randint(1501, 10000)
+```
+
+- Rolls 0-100
+- 0-2 = SSR (2%)
+- 2-13 = SR (11%)
+- 13-100 = R (87%)
+
+### Character Caching
+
+The system uses database caching to reduce API calls:
+
+1. **Check Cache**: Query `characters_cache` table first
+2. **Cache Hit**: Return cached data instantly
+3. **Cache Miss**: Fetch from AniList API and cache result
+
+```python
+cached = await conn.fetchrow("""
+    SELECT anilist_id, name, image_url, rarity, true_power, ability_tags
+    FROM characters_cache 
+    WHERE anilist_id = $1
+""", anilist_id)
+```
+
+## Error Handling
+
+The gacha system includes automatic refunds:
+
+```python
+try:
+    # Pull logic
+except Exception as e:
+    # AUTO-REFUND
+    await conn.execute(
+        "UPDATE users SET gacha_gems = gacha_gems + $1 WHERE user_id = $2", 
+        cost, str(ctx.author.id)
+    )
+    await ctx.reply(f"⚠️ **Error:** `{e}`\n💎 **Your gems have been automatically refunded.**")
+```
+
+If any error occurs during pulling, gems are automatically refunded.
+
+## Examples
+
+### Single Pull Output
+
+```
+✨ Spike Spiegel
+**SSR** | Power: **125,450** (Lv.0)
+🎯 Spark: 45/300
+```
+
+### 10-Pull with Auto-Scrap
+
+```
+🎯 Spark: 55/300
+♻️ Auto-scrapped extras for 500 Gems and 25 Coins!
+[10-pull image showing all characters]
+```
+
+### Starter Pack
+
+```bash
+!starter
+```
+
+```
+🎉 Starter Pack Opened!
+[10-pull image with 1 guaranteed SSR]
+```
+
+## Related Systems
+
+- [Inventory](/systems/inventory) - Managing pulled characters
+- [Economy](/systems/economy) - Earning gems for pulls
+- [Teams](/systems/teams) - Building teams with your characters

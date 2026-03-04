@@ -1,0 +1,320 @@
+---
+title: Expeditions
+description: Send your team on passive expeditions to earn gems and team experience over time
+---
+
+## Overview
+
+Expeditions are a passive resource generation system where you assign a team of characters to gather gems over time. The longer they're deployed, the more rewards you earn.
+
+<Info>
+Expeditions run in the background - you can play normally while your team generates gems!
+</Info>
+
+## How Expeditions Work
+
+### Basic Mechanics
+
+1. **Assign a Team**: Select up to 5 characters for your expedition squad
+2. **Start Expedition**: Begin the expedition timer
+3. **Wait**: Let time pass (minimum 1 minute for testing, scales up to 24 hours)
+4. **Claim Rewards**: Collect gems and team XP
+
+<Warning>
+Your expedition team is separate from your battle team. You can use different characters!
+</Warning>
+
+## Commands
+
+### Set Expedition Team
+
+```
+!set_expedition <id1> <id2> <id3> <id4> <id5>
+```
+
+Alias: `!se`
+
+**Example:**
+```
+!se 101 205 308 412 523
+```
+
+Assigns up to 5 characters to your expedition squad using their inventory IDs.
+
+<Tip>
+You can assign fewer than 5 characters, but your gem yield will be lower!
+</Tip>
+
+### Start an Expedition
+
+```
+!expedition start
+```
+
+Alias: `!ex start`
+
+Begins the expedition timer. Your team will start accumulating rewards.
+
+<Note>
+You cannot start a new expedition if one is already running.
+</Note>
+
+### Check Expedition Status
+
+```
+!expedition
+```
+or
+```
+!ex
+```
+
+Displays your current expedition status:
+- Whether an expedition is running
+- Elapsed time since start
+
+### Claim Expedition Rewards
+
+```
+!expedition claim
+```
+
+Alias: `!ex claim`
+
+Ends the current expedition and collects:
+- Gems based on team power and duration
+- Team XP (1 XP per minute)
+- Potential level ups
+
+<Warning>
+Expeditions must run for at least 1 minute before you can claim rewards!
+</Warning>
+
+## Reward Calculation
+
+### Base Gem Yield
+
+Gem rewards are calculated using:
+
+```
+Base Gems = f(Total Team Power, Duration in Seconds)
+```
+
+The formula is handled by `Economy.calculate_expedition_yield()` which scales rewards based on:
+- **Team Power**: Sum of all assigned characters' true_power
+- **Duration**: Time elapsed in seconds
+
+### Skill Multipliers
+
+Certain character skills boost expedition yields:
+
+<CardGroup cols={2}>
+  <Card title="Hardworker" icon="hammer">
+    **+15% per stack** (Stackable)
+    
+    Applies when the character is on the expedition team.
+    
+    *Example: 3 Hardworker units = +45% gems*
+  </Card>
+  
+  <Card title="Master of Coin" icon="coins">
+    **+10% per stack** (Stackable)
+    
+    Applies if you own the character anywhere in your inventory (even if not on expedition team).
+    
+    *Example: 2 Master of Coin units owned = +20% gems*
+  </Card>
+  
+  <Card title="The Long Road" icon="road">
+    **Up to +24%** (Non-stackable)
+    
+    Scales with duration: 0% at 0 hours → 24% at 24 hours.
+    
+    *Formula: 24% × (hours / 24)*
+  </Card>
+</CardGroup>
+
+### Final Reward Formula
+
+```
+Final Gems = Base Gems × Total Multiplier
+
+Total Multiplier = 1.0 
+  + (Hardworker Stacks × 0.15)
+  + (Master of Coin Stacks × 0.10)
+  + (The Long Road Bonus)
+```
+
+<Tip>
+Stack Hardworker characters on your expedition team for massive gem gains!
+</Tip>
+
+## Team Leveling System
+
+### Experience Gain
+
+Every expedition grants **1 Team XP per minute** of runtime.
+
+**Example:**
+- 60 minutes = 60 XP
+- 6 hours = 360 XP
+- 24 hours = 1,440 XP
+
+### Level Up Requirements
+
+XP needed to reach the next level:
+
+```
+Required XP = (Current Level)² × 100
+```
+
+<AccordionGroup>
+  <Accordion title="Level 1 → 2" icon="arrow-up">
+    1² × 100 = **100 XP**
+  </Accordion>
+  
+  <Accordion title="Level 5 → 6" icon="arrow-up">
+    5² × 100 = **2,500 XP**
+  </Accordion>
+  
+  <Accordion title="Level 10 → 11" icon="arrow-up">
+    10² × 100 = **10,000 XP**
+  </Accordion>
+  
+  <Accordion title="Level 20 → 21" icon="arrow-up">
+    20² × 100 = **40,000 XP**
+  </Accordion>
+</AccordionGroup>
+
+### Level Benefits
+
+Each team level grants a **permanent +1% power boost** to ALL your units!
+
+- Level 10 = +10% power
+- Level 20 = +20% power
+- Level 50 = +50% power
+
+<Info>
+This power boost applies to battles, raids, and bounties - making leveling highly valuable!
+</Info>
+
+## Example Expedition Flow
+
+<Steps>
+  <Step title="Set Your Team">
+    ```
+    !se 101 202 303 404 505
+    ```
+    ✅ Expedition team updated with 5 characters.
+  </Step>
+  
+  <Step title="Start Expedition">
+    ```
+    !ex start
+    ```
+    🚀 **Expedition Started!** Use `!ex claim` later to collect your gems.
+  </Step>
+  
+  <Step title="Wait">
+    Go about your day. Play other features, battle, pull gacha, etc.
+  </Step>
+  
+  <Step title="Claim Rewards">
+    ```
+    !ex claim
+    ```
+    
+    💰 **Expedition Complete!**
+    
+    Earned: **4,850 💎**
+    
+    ✨ **Team XP:** +360
+    
+    📊 Progress: `450/625 XP` to Level 6
+    
+    Multipliers: `1.45x`
+  </Step>
+</Steps>
+
+## Level Up Example
+
+```yaml
+Expedition Duration: 8 hours (480 minutes)
+Team XP Gained: 480
+
+Current Level: 4 (XP: 1,520 / 1,600)
+After Claim: Level 5!
+
+Remaining XP: 400 / 2,500
+
+Bonus: All units now deal +5% power!
+```
+
+<Note>
+If you gain enough XP to level up multiple times, the system will process all level ups automatically.
+</Note>
+
+## Strategy Tips
+
+<CardGroup cols={2}>
+  <Card title="Optimize for Skills" icon="wand-magic-sparkles">
+    Prioritize characters with Hardworker and The Long Road for maximum gem yield.
+  </Card>
+  
+  <Card title="Long Runs" icon="clock">
+    Leave expeditions running overnight to maximize The Long Road bonus.
+  </Card>
+  
+  <Card title="Separate Teams" icon="users">
+    Use your expedition team as a "gem farm" while keeping your strongest units for battles.
+  </Card>
+  
+  <Card title="Level Early" icon="arrow-trend-up">
+    Team levels grant permanent power boosts - prioritize early leveling!
+  </Card>
+</CardGroup>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Can I use characters that are on my battle team?" icon="question">
+    Yes! Expedition teams and battle teams are completely separate. You can use the same characters in both.
+  </Accordion>
+  
+  <Accordion title="What happens if I claim early?" icon="question">
+    You receive rewards proportional to the time elapsed. Waiting longer = more gems!
+  </Accordion>
+  
+  <Accordion title="Do expedition teams take damage or lose HP?" icon="question">
+    No! Expeditions are passive and don't affect your characters in any way.
+  </Accordion>
+  
+  <Accordion title="How many expeditions can I run at once?" icon="question">
+    Only one expedition can be active at a time per player.
+  </Accordion>
+</AccordionGroup>
+
+## Skill Reference
+
+### Hardworker
+- **Context:** Expedition (`e`)
+- **Effect:** +15% gem yield
+- **Stackable:** Yes
+- **Requirement:** Character must be on expedition team
+
+### Master of Coin
+- **Context:** Global (`g`)
+- **Effect:** +10% gem yield
+- **Stackable:** Yes
+- **Requirement:** Character must be owned (anywhere in inventory)
+
+### The Long Road
+- **Context:** Expedition (`e`)
+- **Effect:** Up to +24% gem yield based on duration
+- **Stackable:** No
+- **Requirement:** Character must be on expedition team
+- **Formula:** 24% × (min(duration_hours, 24) / 24)
+
+<Tip>
+The Long Road caps at 24 hours. Running longer won't increase its multiplier further!
+</Tip>

@@ -1,0 +1,318 @@
+---
+title: Battle Commands
+description: Engage in PVP battles and fight NPCs with your team in Project Stardust
+---
+
+## Battle System Overview
+
+Project Stardust features a **skill-based battle system** where:
+- Team composition matters
+- Character abilities activate during combat
+- RNG variance affects final outcomes
+- Positioning influences survivability
+
+---
+
+## Starting Battles
+
+### battle
+
+Initiate a team-based battle against another player or NPC.
+
+```bash
+!battle [target]
+```
+
+<ParamField path="target" type="@mention | difficulty">
+  Either a Discord user mention for PVP or a difficulty level for NPC battles.
+</ParamField>
+
+**Examples:**
+
+```bash
+# PVP Battles
+!battle @username       # Challenge a specific player
+
+# NPC Battles
+!battle easy           # Easy NPC (5 R units)
+!battle normal         # Normal NPC (3 R, 2 SR)
+!battle hard           # Hard NPC (5 SR units)
+!battle expert         # Expert NPC (2 SSR, 2 SR, 1 R)
+!battle nightmare      # Nightmare NPC (3 SSR, 2 SR)
+!battle hell           # Hell NPC (5 SSR, 2 Top 50)
+
+# Default
+!battle                # Training Dummy (Normal difficulty)
+```
+
+---
+
+## NPC Difficulties
+
+NPC teams scale based on difficulty level:
+
+| Difficulty | Composition | Recommended For |
+|-----------|-------------|----------------|
+| **Easy** | 5 R (Rank 1501-10000) | New players, testing teams |
+| **Normal** | 3 R + 2 SR | Early progression |
+| **Hard** | 5 SR (Rank 251-1500) | Mid-game teams |
+| **Expert** | 2 SSR + 2 SR + 1 R | Strong teams |
+| **Nightmare** | 3 SSR + 2 SR | End-game teams |
+| **Hell** | 5 SSR (2 Top 50) | Max power teams only |
+
+<Warning>
+**Hell difficulty** includes 2 characters from the top 50 rankings, making it extremely challenging.
+</Warning>
+
+---
+
+## Battle Mechanics
+
+### Power Calculation
+
+Final power for each character is calculated as:
+
+```
+Final Power = Base Power × Skill Modifiers × Team Multiplier + Flat Bonuses × RNG Variance
+```
+
+**Components:**
+- **Base Power** - From character stats (true_power)
+- **Skill Modifiers** - Applied by character abilities
+- **Team Multiplier** - From team-wide buffs
+- **Flat Bonuses** - Fixed power additions
+- **RNG Variance** - Random 0.9x to 1.1x multiplier
+
+### Battle Phases
+
+1. **Pre-Battle Phase**
+   - Skills activate based on priority
+   - Buffs and setup abilities trigger
+   - Shown in battle log
+
+2. **Power Calculation**
+   - All multipliers applied
+   - Final team totals computed
+   - RNG variance added
+
+3. **Post-Calculation**
+   - Special skill effects (e.g., steals, counters)
+   - Final adjustments
+
+4. **Determination**
+   - Higher total power wins
+   - Victory/Loss decided
+
+5. **Retry Phase**
+   - Certain skills can trigger retries (e.g., "The Almighty")
+   - Battle may be recalculated
+   - Limited retry attempts based on dupe level
+
+### Special Mechanics
+
+#### The Almighty Skill
+
+Characters with "The Almighty" can:
+- **Reject losing outcomes** and retry the battle
+- Max retries: `5 + (dupe_level ÷ 2)`
+- Logs show "rejected this future" when triggered
+- Exhaustion message appears when retries depleted
+
+#### Variance Override
+
+Some skills can fix RNG variance to guarantee specific outcomes.
+
+---
+
+## Battle Results
+
+After a battle concludes, you'll see:
+
+### Battle Embed
+
+**Header:**
+- Battle participants (Attacker vs Defender)
+- Winner announcement
+- Winner's name highlighted
+
+**Team Totals:**
+- Attacker's final power
+- Defender's final power
+
+**Battle Highlights:**
+- Up to 20 log entries per side
+- Skill activations
+- Power modifications
+- Retry attempts
+- Special effects
+
+**Battle Image:**
+- Visual representation of both teams
+- Character portraits
+- Winner indication (blue/red border)
+
+**Example Output:**
+```
+⚔️ Player1 vs Player2
+🏆 Winner: Player1
+
+🔵 Player1
+Total: 45,000
+
+🔴 Player2  
+Total: 42,000
+
+🔹 Attacker Highlights
+• Kirito used "Dual Blades" (+15% power)
+• Asuna's "Healing" restored team power
+• Yhwach rejected this future (Retry 1/7)
+
+🔸 Defender Highlights
+• Goku activated "Ultra Instinct" 
+• Vegeta's counter failed
+```
+
+---
+
+## Daily Tasks Integration
+
+Battles automatically track progress for [Daily Tasks](/commands/progression#tasks):
+
+**PVP Task:**
+- Battle any player
+- Reward: 500 Gems
+
+**NPC Tasks:**
+- Each difficulty has a separate task
+- Rewards: 500 to 5,000 Gems
+- Must **complete** the battle (win or lose counts)
+
+<Note>
+You only need to complete one battle per task per day. You don't need to win.
+</Note>
+
+---
+
+## PVP Strategy
+
+### Team Composition
+
+<Tip>
+**High Power Core:** Focus on 2-3 max-duped SSR characters as your main power.
+</Tip>
+
+<Tip>
+**Skill Support:** Fill remaining slots with characters that have strong battle skills ("Hardworker", "Master of Coin", etc.)
+</Tip>
+
+<Tip>
+**Positioning:** Some skills target specific slots. Review your opponent's likely team composition.
+</Tip>
+
+### Opponent Selection
+
+Before challenging someone:
+- Use `!team @username` to view their team
+- Check their team power
+- Look for skill synergies
+- Consider your win chances
+
+### Boss Battles
+
+Defeating special NPC bosses may unlock achievements or special rewards. Check the user ID for boss flags.
+
+---
+
+## NPC Strategy
+
+### Difficulty Progression
+
+**Recommended Path:**
+1. Start with **Easy** to learn mechanics
+2. Progress to **Normal** once comfortable
+3. Move to **Hard** when you have 3+ SSR characters
+4. Attempt **Expert** with a full SSR team
+5. Try **Nightmare** with max-duped SSRs
+6. Challenge **Hell** only with optimized builds
+
+### Farming Daily Tasks
+
+<Tip>
+For daily gem farming, find the highest difficulty you can reliably complete and farm that task each day.
+</Tip>
+
+---
+
+## Battle Skills
+
+Characters have special abilities that activate during battle. View them using:
+
+```bash
+!view <inventory_id>
+```
+
+Common battle skills include:
+- **Hardworker** - Increases power in battles
+- **Master of Coin** - Global economy bonus
+- **The Almighty** - Can retry losing battles
+- **Dual Blades** - Offensive power boost
+- **Protection** - Defensive abilities
+
+<Note>
+Skills are shown in the battle log when they activate. Pay attention to skill triggers to understand their effects.
+</Note>
+
+---
+
+## Requirements
+
+<Warning>
+You **must** have a battle team set before using battle commands. Use `!stb` to set your team.
+</Warning>
+
+**Before battling:**
+1. Pull characters with `!pull` or `!starter`
+2. Check your inventory with `!inventory`
+3. Set a team with `!stb <ids>`
+4. Verify with `!team`
+5. Start battling!
+
+---
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Why did I lose when my power was higher?">
+    RNG variance (0.9x to 1.1x) can swing battles. Additionally, opponent skills may have modified their power after base calculation.
+  </Accordion>
+  
+  <Accordion title="Do I lose anything when I lose a battle?">
+    No! Battles have no cost or penalty. You can battle as many times as you want.
+  </Accordion>
+  
+  <Accordion title="What's the difference between battle team and expedition team?">
+    Battle team is used for PVP and NPC battles. Expedition team is used for passive gem generation. They're completely separate.
+  </Accordion>
+  
+  <Accordion title="Can I battle the same opponent multiple times?">
+    Yes, there's no limit to how many times you can challenge someone.
+  </Accordion>
+  
+  <Accordion title="What are retry attempts in the battle log?">
+    Characters with "The Almighty" skill can reject losing outcomes and retry the battle calculation. The number of retries depends on their dupe level.
+  </Accordion>
+  
+  <Accordion title="How do I unlock Hell difficulty?">
+    Hell difficulty is always available, but it requires a very strong team (multiple max-duped SSR characters) to have a chance of winning.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Commands
+
+- [`!team`](/commands/team-management#team) - View your battle team
+- [`!stb`](/commands/team-management#set_team_battle) - Set your battle team
+- [`!view`](/commands/progression#view) - Check character skills
+- [`!tasks`](/commands/progression#tasks) - View daily battle objectives
+- [`!raid`](/commands/battle#raids) - Boss raid battles

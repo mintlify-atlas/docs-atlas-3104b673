@@ -1,0 +1,393 @@
+---
+title: Economy System
+description: Earn and spend gems and coins through pulls, expeditions, boat trades, and daily tasks
+---
+
+## Overview
+
+The economy system manages two currencies: **Gems** (premium gacha currency) and **Coins** (secondary currency). Players earn currency through expeditions, boat trading, scrapping, and daily activities.
+
+## Currencies
+
+### Gems (Primary Currency)
+
+**Use**: Character pulls in the gacha system
+
+**Cost**:
+```python
+GEMS_PER_PULL = 1000  # Cost per single pull
+```
+
+- Single pull: **1,000 Gems**
+- 10-pull: **10,000 Gems**
+
+**Earning Methods**:
+- Expeditions (passive income)
+- Boat trading (credits → gems)
+- Scrapping characters
+- Daily tasks
+- Check-in bonuses
+
+### Coins (Secondary Currency)
+
+**Use**: Shop purchases, upgrades
+
+**Earning Methods**:
+- Scrapping characters
+- Daily tasks
+- Bounty missions
+
+**Conversion Ratio**: 1 Coin = 20 Gems (scrap value basis)
+
+## Boat Trading System
+
+Trade Unbelievaboat credits for gacha gems.
+
+### Configuration
+
+```python
+BOAT_COST_PER_PULL = 100_000_000  # 100 Million credits per pull
+MAX_BOAT_PULLS_DAILY = 10         # Daily limit
+ECONOMY_GUILD_ID = "1455361761388531746"
+```
+
+### Purchase Flow
+
+```python
+async def buy_pulls_with_boat(user_id, guild_id, count):
+    # 1. Check daily limit
+    now = datetime.datetime.utcnow()
+    last_pull_at = user['last_boat_pull_at']
+    current_pulls = user['daily_boat_pulls'] if last_pull_at and last_pull_at.date() == now.date() else 0
+    
+    if current_pulls + count > MAX_BOAT_PULLS_DAILY:
+        return {"success": False, "message": f"Daily limit reached."}
+    
+    # 2. Deduct from Unbelievaboat API
+    total_cost = count * BOAT_COST_PER_PULL
+    url = f"https://unbelievaboat.com/api/v1/guilds/{target_guild_id}/users/{user_id}"
+    data = {"bank": -total_cost}
+    async with session.patch(url, headers=headers, json=data) as resp:
+        if resp.status != 200:
+            return {"success": False, "message": "Insufficient funds"}
+    
+    # 3. Add gems to user
+    await conn.execute("""
+        UPDATE users 
+        SET gacha_gems = gacha_gems + $1, 
+            daily_boat_pulls = $2, 
+            last_boat_pull_at = $3,
+            boat_credits_spent = boat_credits_spent + $4
+        WHERE user_id = $5
+    """, (count * GEMS_PER_PULL), (current_pulls + count), now, total_cost, str(user_id))
+```
+
+### Daily Limit Reset
+
+Limits reset daily based on date comparison:
+
+```python
+last_pull_at = user['last_boat_pull_at']
+current_pulls = user['daily_boat_pulls'] if last_pull_at and last_pull_at.date() == now.date() else 0
+```
+
+<Note>
+If `last_boat_pull_at` is from a previous day, `current_pulls` resets to 0.
+</Note>
+
+### Trading Limits
+
+| Limit Type | Value | Reset |
+|------------|-------|-------|
+| **Min Purchase** | 1 pull (100M credits) | - |
+| **Max Purchase** | 10 pulls (1B credits) | - |
+| **Daily Max** | 10 pulls total | 00:00 UTC |
+
+### Error Handling
+
+```python
+if count <= 0 or count > MAX_BOAT_PULLS_DAILY:
+    return {"success": False, "message": f"You can only buy 1 to 10 pulls."}
+
+if not UNBELIEVABOAT_TOKEN:
+    return {"success": False, "message": "API token not configured."}
+
+# 15 second timeout to prevent hanging
+timeout = aiohttp.ClientTimeout(total=15)
+```
+
+## Expedition System
+
+Passive gem income based on team power and time.
+
+### Yield Formula
+
+```python
+def calculate_expedition_yield(total_power, duration_seconds):
+    hours = duration_seconds / 3600
+    
+    # Calculate Pulls Per Day (PPD) based on piecewise logic
+    if total_power < 20000:
+        ppd = (total_power / 20000) * 10
+    elif total_power < 60000:
+        ppd = 10 + ((total_power - 20000) / 4000)
+    else:
+        ppd = min(25, 20 + ((total_power - 60000) / 4000))
+    
+    # Convert to gems
+    gems_per_day = ppd * GEMS_PER_PULL
+    gems_per_hour = gems_per_day / 24
+    
+    return int(gems_per_hour * hours)
+```
+
+### Power Breakpoints
+
+| Total Power | Pulls/Day | Gems/Day | Gems/Hour |
+|-------------|-----------|----------|------------|
+| **20,000** | 10 | 10,000 | ~417 |
+| **40,000** | 15 | 15,000 | ~625 |
+| **60,000** | 20 | 20,000 | ~833 |
+| **80,000** | 25 (cap) | 25,000 | ~1,042 |
+
+<Tip>
+60,000 team power is the optimal target. Beyond 80,000, yields cap at 25 pulls/day.
+</Tip>
+
+### Scaling Tiers
+
+```python
+# Tier 1: 0 - 20k (Scale up to 10 PPD)
+ppd = (total_power / 20000) * 10
+
+# Tier 2: 20k - 60k (Scale 10 → 20 PPD)
+ppd = 10 + ((total_power - 20000) / 4000)
+
+# Tier 3: 60k - 80k (Scale 20 → 25 PPD)
+ppd = min(25, 20 + ((total_power - 60000) / 4000))
+```
+
+### Example Calculation
+
+```python
+# Team power: 45,000
+# Duration: 8 hours
+
+# Step 1: Calculate PPD
+ppd = 10 + ((45000 - 20000) / 4000)
+ppd = 10 + 6.25
+ppd = 16.25
+
+# Step 2: Gems per hour
+gems_per_day = 16.25 * 1000 = 16,250
+gems_per_hour = 16250 / 24 = 677.08
+
+# Step 3: Total yield
+total_gems = 677.08 * 8 = 5,416 gems
+```
+
+## Currency Storage
+
+### Database Schema
+
+```sql
+CREATE TABLE users (
+    user_id TEXT PRIMARY KEY,
+    gacha_gems INTEGER DEFAULT 0,
+    coins INTEGER DEFAULT 0,
+    boat_credits_spent BIGINT DEFAULT 0,
+    daily_boat_pulls INTEGER DEFAULT 0,
+    last_boat_pull_at TIMESTAMP WITH TIME ZONE,
+    -- Other fields...
+)
+```
+
+### User Items Table
+
+```sql
+CREATE TABLE user_items (
+    user_id TEXT,
+    item_id TEXT,
+    quantity INTEGER DEFAULT 0,
+    PRIMARY KEY (user_id, item_id)
+)
+```
+
+Stores consumable items like:
+- Bond potions
+- SSR Tokens
+- Special event items
+
+## Item Display Names
+
+Items have cosmetic display names:
+
+```python
+ITEM_DISPLAY_NAMES = {
+    "bond_small": "Faint Tincture",
+    "bond_med": "Vital Draught",
+    "bond_large": "Heart Elixirs",
+    "bond_ur": "Essence of Devotion"
+}
+
+def get_item_display_name(item_id):
+    return ITEM_DISPLAY_NAMES.get(item_id, item_id)
+```
+
+## Free Pulls (Owner Toggle)
+
+Bot owners can enable free pulls:
+
+```python
+async def is_free_pull(user, bot):
+    if not await bot.is_owner(user):
+        return False
+    
+    pool = await get_db_pool()
+    row = await conn.fetchrow(
+        "SELECT value_bool FROM global_settings WHERE key = 'owner_free_pulls'"
+    )
+    return row['value_bool'] if row else True
+```
+
+Stored in `global_settings` table:
+
+```sql
+CREATE TABLE global_settings (
+    key TEXT PRIMARY KEY,
+    value_bool BOOLEAN DEFAULT TRUE
+)
+```
+
+## Daily Tasks
+
+Earn rewards by completing daily objectives.
+
+### Task Structure
+
+```sql
+CREATE TABLE daily_tasks (
+    user_id TEXT,
+    task_key TEXT,                      -- e.g., "pvp", "normal", "easy"
+    progress INTEGER DEFAULT 0,
+    is_claimed BOOLEAN DEFAULT FALSE,
+    last_updated DATE DEFAULT CURRENT_DATE,
+    PRIMARY KEY (user_id, task_key)
+)
+```
+
+### Task Tracking
+
+Tasks auto-reset daily:
+
+```python
+await pool.execute("""
+    INSERT INTO daily_tasks (user_id, task_key, progress, last_updated, is_claimed)
+    VALUES ($1, $2, 1, CURRENT_DATE, FALSE)
+    ON CONFLICT (user_id, task_key) 
+    DO UPDATE SET 
+        progress = 1, 
+        last_updated = CURRENT_DATE, 
+        is_claimed = FALSE
+    WHERE daily_tasks.last_updated < CURRENT_DATE OR daily_tasks.progress = 0
+""", user_id, task_key)
+```
+
+<Note>
+If `last_updated < CURRENT_DATE`, the task resets automatically.
+</Note>
+
+## Tracking Statistics
+
+The bot tracks lifetime economy stats:
+
+```sql
+ALTER TABLE users ADD COLUMN total_pulls INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN expedition_gems_total INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN total_scrapped INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN checkin_streak INTEGER DEFAULT 0;
+ALTER TABLE users ADD COLUMN boat_credits_spent BIGINT DEFAULT 0;
+```
+
+### Tracked Metrics
+
+| Stat | Description | Type |
+|------|-------------|------|
+| `total_pulls` | Total gacha pulls performed | INTEGER |
+| `expedition_gems_total` | Total gems earned from expeditions | INTEGER |
+| `total_scrapped` | Total characters scrapped | INTEGER |
+| `boat_credits_spent` | Total credits spent on boat trades | BIGINT |
+| `checkin_streak` | Consecutive daily check-ins | INTEGER |
+
+## Currency Operations
+
+### Add Currency
+
+```python
+async def add_currency(user_id, amount):
+    pool = await get_db_pool()
+    await pool.execute(
+        "UPDATE users SET gacha_gems = gacha_gems + $1 WHERE user_id = $2", 
+        amount, str(user_id)
+    )
+```
+
+### Get User Data
+
+```python
+async def get_user(user_id):
+    pool = await get_db_pool()
+    row = await conn.fetchrow("SELECT * FROM users WHERE user_id = $1", str(user_id))
+    if row: return dict(row)
+    
+    # Auto-create user if not exists
+    await conn.execute("INSERT INTO users (user_id) VALUES ($1)", str(user_id))
+    return dict(await conn.fetchrow("SELECT * FROM users WHERE user_id = $1", str(user_id)))
+```
+
+## Examples
+
+### Expedition Income
+
+```python
+# 24-hour expedition with 50k power team
+power = 50000
+duration = 86400  # 24 hours in seconds
+
+yield = calculate_expedition_yield(power, duration)
+# Result: ~17,500 gems (17.5 pulls)
+```
+
+### Boat Trading
+
+```bash
+# Trade 500M credits for 5 pulls
+!boat 5
+```
+
+```
+✅ Purchased 5 pulls for 500,000,000 credits!
+💎 Added 5,000 gems to your account.
+Daily pulls used: 5/10
+```
+
+### Scrap Income
+
+```python
+# Scrap 25 R characters
+count = 25
+gems = count * 100  # 2,500 gems
+coins = count * 5   # 125 coins
+
+# Scrap 10 SR characters  
+count = 10
+gems = count * 500  # 5,000 gems
+coins = count * 25  # 250 coins
+```
+
+## Related Systems
+
+- [Gacha](/systems/gacha) - Spending gems on pulls
+- [Inventory](/systems/inventory) - Scrapping for currency
+- [Teams](/systems/teams) - Building expedition power
+- [Battles](/systems/battles) - Earning daily task rewards

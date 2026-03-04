@@ -1,0 +1,143 @@
+---
+title: Command Overview
+description: Learn how to use Project Stardust's command system and help features
+---
+
+## Command Prefix
+
+All commands use the prefix `!` (or the configured prefix for your server).
+
+## Getting Help
+
+### General Help Menu
+
+```bash
+!help
+```
+
+Displays all available commands organized by category (Gacha, Battle, Inventory, etc.).
+
+### Specific Command Help
+
+```bash
+!help [command_name]
+```
+
+Shows detailed information about a specific command including:
+- Usage syntax
+- Description
+- Available aliases
+
+**Example:**
+```bash
+!help pull
+```
+
+## Command Categories
+
+Project Stardust's commands are organized into several categories:
+
+| Category | Description |
+|----------|-------------|
+| **Gacha** | Summoning characters, viewing banners, and starter packs |
+| **Battle** | Team battles against players and NPCs |
+| **Team Management** | Building and managing your battle teams |
+| **Inventory** | Viewing, managing, and upgrading your characters |
+| **Progression** | Daily tasks, expeditions, leveling, and economy |
+| **Shop** | Purchasing characters and items |
+| **Raids** | Cooperative boss battles with leaderboards |
+| **Achievements** | Tracking your progress and unlocking badges |
+
+## Command Aliases
+
+Many commands have shorter aliases for convenience:
+
+```bash
+!inventory  # Full command
+!inv        # Alias
+!chars      # Another alias
+```
+
+Aliases are shown in the detailed help for each command.
+
+## Parameter Types
+
+Commands use different parameter types:
+
+### Required Parameters
+Shown without brackets:
+```bash
+!view 123
+```
+
+### Optional Parameters
+Shown in square brackets:
+```bash
+!team [user]  # Views your team or another user's team
+```
+
+### Multiple Parameters
+Some commands accept multiple values:
+```bash
+!lock 1 5 12  # Lock multiple characters at once
+```
+
+## Common Conventions
+
+### User Mentions
+Some commands accept Discord user mentions:
+```bash
+!battle @username   # Challenge a specific player
+!profile @username  # View another player's profile
+```
+
+### Inventory IDs
+Many commands use character inventory IDs:
+```bash
+!view 123          # View character details
+!lock 45 67 89     # Lock multiple characters
+```
+
+You can find inventory IDs using `!inventory` - they're shown as `#ID` before each character name.
+
+## Admin Commands
+
+Commands marked with 🔒 are restricted to bot owners:
+- `!start_raid` - Start a new raid event
+- Admin panel commands
+
+## Tips
+
+<Tip>
+Use `!help` frequently to discover new commands and features as they're added to the bot.
+</Tip>
+
+<Warning>
+Commands are case-insensitive. `!PULL`, `!Pull`, and `!pull` all work the same way.
+</Warning>
+
+## Interactive Features
+
+Many commands include interactive Discord UI elements:
+- **Dropdown Menus** - Select from available options
+- **Buttons** - Navigate pages or confirm actions
+- **Pagination** - Browse large lists of data
+
+These interactions have timeouts (usually 60 seconds) after which the buttons become disabled.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Gacha Commands" icon="dice" href="/commands/gacha">
+    Learn about summoning and banners
+  </Card>
+  <Card title="Battle Commands" icon="sword" href="/commands/battle">
+    Start battling with your team
+  </Card>
+  <Card title="Team Management" icon="users" href="/commands/team-management">
+    Build your perfect team
+  </Card>
+  <Card title="Progression" icon="chart-line" href="/commands/progression">
+    Track your progress and growth
+  </Card>
+</CardGroup>

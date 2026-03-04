@@ -1,0 +1,268 @@
+---
+title: Raid Boss Battles
+description: Challenge epic raid bosses in turn-based battles for exclusive rewards and leaderboard glory
+---
+
+## Overview
+
+Raid Battles are limited-time PvE events where you challenge powerful bosses with your team. Deal as much damage as possible to climb the leaderboard and earn exclusive rewards.
+
+<Info>
+Raids are turn-based battles where positioning, team composition, and boss mechanics all matter!
+</Info>
+
+## How Raid Battles Work
+
+### Turn-Based Combat
+
+Raid battles follow a strict turn order:
+
+1. **Turn 0 (Pre-Battle)**: Your team's skills activate and stats are finalized
+2. **Boss Phase**: Boss attacks and uses special abilities
+3. **Player Phase**: Your team counter-attacks
+4. **Repeat** until your team is defeated
+
+<Warning>
+The boss has **infinite HP** - your goal is to survive as long as possible and deal maximum damage!
+</Warning>
+
+### Key Mechanics
+
+<CardGroup cols={2}>
+  <Card title="HP = Power" icon="heart">
+    Your units' HP equals their true power stat. Higher power means more survivability.
+  </Card>
+  
+  <Card title="Positioning Matters" icon="chess-board">
+    Boss attacks hit from left to right. Place your tankiest units in front slots!
+  </Card>
+  
+  <Card title="Phase Transitions" icon="bolt">
+    Bosses enter Phase 2 at 50% HP with enhanced abilities and increased ATK.
+  </Card>
+  
+  <Card title="Overkill Damage" icon="burst">
+    Damage cascades through your team. When a unit falls, excess damage hits the next unit.
+  </Card>
+</CardGroup>
+
+## Daily Tickets
+
+Each player receives **3 raid tickets per day** that refresh at midnight UTC.
+
+- Only your **best run** counts for the leaderboard
+- Tickets are consumed when you start a battle
+- Practice your strategy across multiple attempts
+
+<Tip>
+Try different team compositions with your 3 daily tickets to find the optimal strategy!
+</Tip>
+
+## Commands
+
+### View Active Raid
+
+```
+!raid
+```
+
+Displays the current raid boss information including:
+- Boss stats (HP, ATK)
+- Your remaining tickets (X/3)
+- Your personal best damage
+- Top 3 leaderboard preview
+- Event end time
+
+### Start a Raid Battle
+
+```
+!raid_fight
+```
+or
+```
+!raidfight
+```
+
+Begins a raid attempt with your current team. The battle will:
+- Display live turn-by-turn updates
+- Show boss HP bar and damage dealt
+- Provide interactive pagination to review the battle
+
+<Warning>
+Make sure you have a team set up using `!stb` before attempting a raid!
+</Warning>
+
+### View Leaderboard
+
+```
+!raid_lb
+```
+or
+```
+!raidlb
+```
+
+Displays the full raid leaderboard with:
+- Damage dealt by each player
+- Turns survived
+- Paginated list (10 players per page)
+
+### Raid Mechanics Guide
+
+```
+!raid_info
+```
+
+Shows a detailed explanation of raid mechanics including:
+- Turn-based combat system
+- Daily ticket system
+- Strategy tips
+
+## Boss Abilities
+
+Each raid boss has unique abilities that trigger at specific turns or HP thresholds.
+
+### Example: Shylezshkeban, the Onyx
+
+<AccordionGroup>
+  <Accordion title="Phase 1 Abilities (100%-50% HP)" icon="shield">
+    **Fractal Strike** (Every 3 turns)
+    - Deals normal damage to frontline
+    - Creates a shard that explodes next turn for 40% ATK AoE damage
+    
+    **Tessellation** (Every 5 turns)
+    - Reduces team power by 15% for 2 turns
+  </Accordion>
+  
+  <Accordion title="Phase 2 Abilities (<50% HP)" icon="fire">
+    **Enrage (Passive)**
+    - Boss ATK increases by 20% upon entering Phase 2
+    
+    **Singularity Collapse** (Every 4 turns)
+    - Massive 3x ATK damage with full overkill cascade
+    
+    **Dimensional Shift** (Every 6 turns)
+    - Randomly swaps positions of 2 living units
+    
+    **Rampage** (Every 7 turns)
+    - Hits ALL units for 60% ATK simultaneously
+  </Accordion>
+</AccordionGroup>
+
+## Strategy Tips
+
+<Steps>
+  <Step title="Build a Tank Wall">
+    Place your highest HP SSR characters in slots 1-3 to absorb the most damage.
+  </Step>
+  
+  <Step title="Leverage Skills">
+    Pre-battle skills apply once before combat starts. Use buff/debuff skills strategically.
+  </Step>
+  
+  <Step title="Watch Boss Patterns">
+    Boss skills trigger on specific turn intervals. Plan your team to survive big hits.
+  </Step>
+  
+  <Step title="Track Phase 2">
+    At 50% HP, bosses become stronger. Ensure your team can survive the transition.
+  </Step>
+  
+  <Step title="Review Battle Logs">
+    Use the pagination buttons after battle to analyze what went wrong and optimize.
+  </Step>
+</Steps>
+
+## Battle Statistics
+
+After each raid attempt, you'll see:
+
+- **Total Damage Dealt**: Your final score for the leaderboard
+- **Turns Survived**: How many turns your team lasted
+- **Turn-by-Turn Logs**: Detailed breakdown of damage, skills, and casualties
+
+<Note>
+The battle viewer includes interactive buttons to replay each turn and analyze your performance.
+</Note>
+
+## Example Battle Flow
+
+```yaml
+Turn 0: Pre-Battle Skills
+  • Warrior's Spirit: +10% ATK to all allies
+  • Tank Stance: +20% DEF to frontline
+
+Turn 1: Boss Phase
+  • Boss attacks frontline for 8,000 damage
+  • Hit Slot 1 Character for 8,000 damage (42,000 HP remaining)
+  
+Turn 1: Player Phase
+  • Slot 1: 50,000 damage
+  • Slot 2: 48,000 damage
+  • Slot 3: 45,000 damage
+  • Combined: 143,000 damage dealt
+
+Turn 2: Boss Phase
+  • Fractal Strike!
+  • Hit Slot 1 for 8,000 damage
+  • Shard forms (will detonate next turn for 3,200 AoE)
+
+Turn 3: Boss Phase
+  • Shard detonates!
+  • All units take 3,200 damage
+  • Slot 5 has fallen!
+```
+
+## Rewards
+
+Raid battles offer:
+
+- **Leaderboard Rankings**: Top players earn exclusive titles and rewards
+- **Participation Rewards**: All players who deal damage receive end-of-event bonuses
+- **Achievement Progress**: Raid participation counts toward achievements
+
+<Tip>
+Even if you can't reach #1, every attempt helps you refine your strategy and improve your score!
+</Tip>
+
+## Special Mechanics
+
+### The Almighty Revival
+
+Some characters have unique raid abilities:
+
+- **Yhwach's The Almighty**: Revives the entire team once per battle (1 base revival + 1 per 5 dupes, max 3)
+- Powerful for extending survival and maximizing damage output
+
+### Debuff Tracking
+
+Boss debuffs like Tessellation reduce your team's power temporarily:
+- Duration counts down each turn
+- Multiple debuffs can stack
+- Shown in battle logs
+
+## Admin Commands
+
+<Warning>
+These commands are owner-only and used to manage raid events.
+</Warning>
+
+### Start a Raid Event
+
+```
+!start_raid <boss_id> [days]
+```
+
+**Example:**
+```
+!start_raid SHYLEZSHKEBAN_ONYX 7
+```
+
+Creates a new raid event that lasts for 7 days.
+
+**Available Boss IDs:**
+- `SHYLEZSHKEBAN_ONYX` - The Onyx (5M HP, 8K ATK)
+
+<Info>
+When a new raid starts, all previous raid data is deactivated and the leaderboard resets.
+</Info>

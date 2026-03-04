@@ -1,0 +1,423 @@
+---
+title: Shop & Daily Deals
+description: Purchase characters, items, and exclusive rewards from the daily rotating shop
+---
+
+## Overview
+
+Project Stardust features two shop systems:
+
+1. **Daily Character Shop**: Rotating character selection with level-based discounts
+2. **Item Shop**: Permanent items like SSR Tokens for character upgrades
+
+<Info>
+The Character Shop refreshes daily at midnight UTC with new characters!
+</Info>
+
+## Daily Character Shop
+
+### How It Works
+
+Every day, the shop offers a random selection of characters across all rarities:
+
+- **2 SSR** characters
+- **3 SR** characters
+- **5 R** characters
+
+Characters are randomly selected from the entire character pool and remain available for 24 hours.
+
+### Viewing the Shop
+
+```
+!shop
+```
+
+Displays:
+- Today's date
+- Your current gem balance
+- All available characters with prices
+- Level 30+ discount status (if applicable)
+- Interactive dropdown to purchase
+
+<Tip>
+Rate-up characters (if active) appear with a 🔥 indicator and cost 20% more!
+</Tip>
+
+### Pricing
+
+Base prices by rarity:
+
+| Rarity | Base Price |
+|--------|------------|
+| R | 1,000 💎 |
+| SR | 20,000 💎 |
+| SSR | 100,000 💎 |
+
+<Note>
+Rate-up characters (featured on active banners) cost 20% more than base price.
+</Note>
+
+### Level 30 Discount
+
+Players at **Team Level 30 or higher** receive:
+
+<Card title="🌟 Platinum Member Status" icon="star">
+  **25% OFF** all shop purchases!
+  
+  - SSR: ~~100,000~~ **75,000** 💎
+  - SR: ~~20,000~~ **15,000** 💎
+  - R: ~~1,000~~ **750** 💎
+</Card>
+
+<Tip>
+Reach Team Level 30 through expeditions to unlock permanent shop discounts!
+</Tip>
+
+### Purchasing Characters
+
+Use the interactive dropdown menu:
+
+1. Select a character from the dropdown
+2. Bot checks if you can afford it
+3. If you already own the character, it's upgraded by +1 Dupe Level
+4. If you don't own it, it's added to your inventory at Dupe Level 0
+
+<Warning>
+Purchases are instant and cannot be refunded - make sure you have enough gems!
+</Warning>
+
+## Item Shop
+
+### Viewing the Item Shop
+
+```
+!itemshop
+```
+
+Aliases: `!ishop`, `!items_shop`
+
+Displays:
+- Your coin and gem balance
+- All available items with descriptions
+- Interactive dropdown to purchase
+
+### Available Items
+
+<AccordionGroup>
+  <Accordion title="SSR Token" icon="ticket">
+    **Description:** Upgrades an SSR unit by +1 Dupe Level.
+    
+    **Cost:** 2,000 🪙 (Coins)
+    
+    **Usage:** Use with `!use_token <character_id>`
+    
+    SSR Tokens allow you to dupe your SSR characters without pulling duplicates from gacha!
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+More items may be added to the Item Shop in future updates!
+</Info>
+
+### Quick Purchase: SSR Tokens
+
+```
+!buy_token [amount]
+```
+
+**Examples:**
+
+Buy 1 token:
+```
+!buy_token
+```
+
+Buy 5 tokens:
+```
+!buy_token 5
+```
+
+This command:
+- Calculates total cost (amount × 2,000 coins)
+- Verifies you have enough coins
+- Purchases the tokens instantly
+- Adds them to your inventory
+
+<Tip>
+Bulk buying tokens saves time compared to using the dropdown menu multiple times!
+</Tip>
+
+## Spark System
+
+### What is Sparking?
+
+The Spark System allows you to **exchange 500 Banner Points** for a guaranteed rate-up SSR from the current banner.
+
+<Info>
+Banner Points are earned through gacha pulls and reset when a new banner goes live.
+</Info>
+
+### Using Spark
+
+```
+!spark
+```
+
+Alias: `!pity_exchange`
+
+Requirements:
+- Must have 500 Banner Points
+- Points must be from the **current active banner**
+- Banner must have at least one rate-up SSR
+
+### Spark Selection
+
+**Single Rate-Up SSR:**
+If the banner has only one SSR, you'll receive it automatically.
+
+**Multiple Rate-Up SSRs:**
+An interactive dropdown appears for you to choose which character to claim.
+
+<Warning>
+Sparking consumes 500 points and cannot be undone - choose carefully!
+</Warning>
+
+### Banner Points
+
+Banner Points accumulate as you pull:
+
+- Points are tied to a specific banner ID
+- When a new banner goes live, your points reset to 0
+- You must earn 500 points on the **current banner** to spark
+
+<Note>
+Check your Banner Point balance in your profile or gacha UI.
+</Note>
+
+## Shop Rotation
+
+### Daily Refresh
+
+The Character Shop refreshes at **00:00 UTC** every day:
+
+1. Previous day's characters are removed
+2. New random characters are selected
+3. Shop data is stored in the `daily_shop` table
+4. Players can view the new selection immediately
+
+<Tip>
+Check the shop daily for rare characters you might be hunting!
+</Tip>
+
+### Shop Data Storage
+
+The shop rotation is stored in the database:
+
+```sql
+CREATE TABLE daily_shop (
+    date DATE PRIMARY KEY,
+    items JSONB
+);
+```
+
+This ensures all players see the same shop on the same day.
+
+## Currency Guide
+
+<CardGroup cols={2}>
+  <Card title="💎 Gacha Gems" icon="gem">
+    **Used for:**
+    - Character Shop purchases
+    - Gacha pulls
+    
+    **Earned from:**
+    - Expeditions
+    - Achievements
+    - Daily rewards
+    - Event rewards
+  </Card>
+  
+  <Card title="🪙 Coins" icon="coins">
+    **Used for:**
+    - Item Shop purchases (SSR Tokens)
+    
+    **Earned from:**
+    - PvP battles
+    - UR Tier bounties
+    - Achievements
+  </Card>
+</CardGroup>
+
+## Duplicate Handling
+
+### Already Owned
+
+If you purchase a character you already own:
+
+```
+✅ Purchased!
+Aqua upgraded to Dupe Level 3!
+```
+
+The character's dupe level increases by 1.
+
+### New Character
+
+If you don't own the character:
+
+```
+✅ Purchased!
+Megumin added to your inventory!
+```
+
+The character is added at Dupe Level 0.
+
+<Note>
+Dupe levels unlock passive bonuses and enhance character skills.
+</Note>
+
+## Example Shop Session
+
+<Steps>
+  <Step title="Check Today's Shop">
+    ```
+    !shop
+    ```
+    
+    🛒 **Daily Character Shop**
+    
+    **Date:** 2026-03-04
+    
+    **Your Balance:** 125,000 💎
+    
+    **Today's Selection:**
+    - **Aqua** `[SSR]` — 100,000
+    - **Kazuma** `[SSR]` — 100,000
+    - **Megumin** `[SR]` — 20,000
+    - **Darkness** `[SR]` — 20,000
+    - **Wiz** `[SR]` — 20,000
+  </Step>
+  
+  <Step title="Select Character">
+    Use the dropdown menu to select **Megumin (SR)**.
+  </Step>
+  
+  <Step title="Purchase Confirmation">
+    Bot verifies:
+    - You have 125,000 💎
+    - Megumin costs 20,000 💎
+    - You can afford it ✅
+  </Step>
+  
+  <Step title="Transaction Complete">
+    ```
+    ✅ Purchased!
+    Megumin added to your inventory!
+    ```
+    
+    Your new balance: 105,000 💎
+  </Step>
+</Steps>
+
+## Strategy Tips
+
+<CardGroup cols={2}>
+  <Card title="Save for SSRs" icon="piggy-bank">
+    SSRs in the shop are guaranteed - don't waste gems on gacha if the character appears in the shop!
+  </Card>
+  
+  <Card title="Reach Level 30" icon="arrow-trend-up">
+    The 25% discount saves massive amounts of gems for high-level players.
+  </Card>
+  
+  <Card title="Check Daily" icon="calendar-check">
+    The shop rotates daily - you might miss rare characters if you skip days.
+  </Card>
+  
+  <Card title="Use Tokens for Dupes" icon="ticket">
+    Buying SSR Tokens with coins is cheaper than pulling duplicates from gacha.
+  </Card>
+</CardGroup>
+
+## Rate-Up System
+
+### What is Rate-Up?
+
+Characters featured on the current banner are marked as "rate-up" in the shop:
+
+- Appear with a 🔥 indicator
+- Cost **20% more** than base price
+- Designed to maintain gacha value
+
+**Example:**
+If Aqua is rate-up:
+- Normal SSR price: 100,000 💎
+- Rate-up SSR price: 120,000 💎
+
+<Warning>
+Rate-up pricing prevents the shop from devaluing limited banner characters.
+</Warning>
+
+## Spark Selection Interface
+
+When multiple SSRs are available to spark:
+
+```
+✨ Spark Exchange Available!
+Select the character you want to claim:
+
+[Dropdown Menu]
+- Aqua (ID: 12345)
+- Kazuma (ID: 67890)
+```
+
+Selecting a character:
+1. Deducts 500 Banner Points
+2. Adds character to inventory (or +1 dupe if owned)
+3. Confirms transaction
+
+<Info>
+Spark selections timeout after 60 seconds of inactivity.
+</Info>
+
+## Admin Commands
+
+<Warning>
+These commands are for bot administrators only.
+</Warning>
+
+### Set Rate-Up Characters
+
+Modify the `RATE_UP_IDS` list in `shop.py` to designate characters as rate-up:
+
+```python
+self.RATE_UP_IDS = [12345, 67890]  # Anilist IDs
+```
+
+These characters will:
+- Cost 20% more in the shop
+- Display with a 🔥 indicator
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Can I refund a shop purchase?" icon="question">
+    No, all shop purchases are final and cannot be refunded.
+  </Accordion>
+  
+  <Accordion title="Do shop characters change at a specific time?" icon="question">
+    Yes, the shop refreshes at 00:00 UTC daily.
+  </Accordion>
+  
+  <Accordion title="Can I see tomorrow's shop?" icon="question">
+    No, the shop is generated randomly each day and cannot be previewed.
+  </Accordion>
+  
+  <Accordion title="What happens if I don't have enough gems?" icon="question">
+    The purchase will fail with a message showing how many gems you're short.
+  </Accordion>
+  
+  <Accordion title="Do Banner Points expire?" icon="question">
+    Yes, Banner Points reset to 0 when a new banner goes live.
+  </Accordion>
+</AccordionGroup>

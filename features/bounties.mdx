@@ -1,0 +1,384 @@
+---
+title: Bounty Board
+description: Hunt rotating enemies for bond items and rewards using the key-based bounty system
+---
+
+## Overview
+
+The Bounty Board is a rotating PvE system where you hunt AI-controlled enemy teams using limited keys. Earn bond items to strengthen your characters and complete unique challenges.
+
+<Info>
+The Bounty Board refreshes **every hour** with new targets across three difficulty tiers!
+</Info>
+
+## How Bounties Work
+
+### Bounty Keys
+
+You have **3 Bounty Keys** that regenerate over time:
+
+- Start with 3/3 keys
+- Regenerate **1 key per hour**
+- Capped at 3 maximum
+- Keys regenerate even while offline
+
+<Warning>
+Each hunt attempt consumes 1 key, win or lose!
+</Warning>
+
+### Bounty Tiers
+
+The board displays **3 slots** with rotating difficulty tiers:
+
+<CardGroup cols={3}>
+  <Card title="R Tier" icon="circle">
+    **Power:** 30,000-35,000
+    
+    **Reward:** Faint Tincture (10 Bond XP)
+  </Card>
+  
+  <Card title="SR Tier" icon="star">
+    **Power:** 50,000-55,000
+    
+    **Reward:** Vital Draught (50 Bond XP)
+  </Card>
+  
+  <Card title="SSR Tier" icon="gem">
+    **Power:** 75,000-80,000
+    
+    **Reward:** Heart Elixirs (250 Bond XP)
+  </Card>
+</CardGroup>
+
+<Tip>
+**UR Tier** has a 1% chance to appear in any slot with **90,000 power** and rewards an **Essence of Devotion** (2,500 Bond XP) + 50 Coins + 5,000 Gems!
+</Tip>
+
+## Commands
+
+### View Bounty Board
+
+```
+!bounty
+```
+
+Displays the current bounty board with:
+- Available bounty slots (1-3)
+- Enemy tier and power
+- Your completion status per slot
+- Time until next refresh
+- Your remaining keys (X/3)
+
+### Hunt a Bounty
+
+```
+!hunt
+```
+
+Opens an interactive menu where you:
+1. Select a target from the dropdown
+2. View enemy intelligence (team composition)
+3. Confirm and start the battle
+
+<Warning>
+You must have at least 1 key to use `!hunt`!
+</Warning>
+
+### Gift Bond Items
+
+```
+!gift <id> <item> [amount] ! <id> <item> [amount] ...
+```
+
+**Examples:**
+
+Single gift:
+```
+!gift 101 small 5
+```
+
+Multiple gifts in one command:
+```
+!gift 101 small 5 ! 102 med 1 ! 103 large 2
+```
+
+**Item Aliases:**
+- `small` or `s` = Faint Tincture (10 XP)
+- `med` or `m` = Vital Draught (50 XP)
+- `large` or `l` = Heart Elixirs (250 XP)
+- `ur` = Essence of Devotion (2,500 XP)
+
+<Note>
+Gifting bond items increases a character's Bond Level, which unlocks powerful bonuses!
+</Note>
+
+## Battle System
+
+Bounty battles use the same combat system as regular battles:
+
+### Combat Flow
+
+1. **Pre-Battle Phase**: Skills activate
+2. **Power Calculation**: Each unit's combat power is calculated
+3. **Comparison**: Your total power vs enemy total power
+4. **Outcome**: WIN if your power > enemy power
+
+### Win Conditions
+
+- **Victory**: Your team power exceeds enemy team power
+- **Defeat**: Enemy team power exceeds your team power
+- **Draw**: Snake Zodiac or special mechanics force a tie
+
+<Tip>
+Review your team composition and use characters with beneficial skills to tip the scales!
+</Tip>
+
+## Bounty Board Rotation
+
+### Hourly Refresh
+
+Every hour at XX:00:
+- All 3 slots are cleared
+- New random enemies are generated
+- Your completion status resets
+- You get fresh attempts at all slots
+
+<Info>
+The board syncs to the top of every hour (e.g., 1:00, 2:00, 3:00)
+</Info>
+
+### Enemy Generation
+
+Each slot randomly generates:
+1. A tier (R/SR/SSR with 1% UR chance)
+2. A total power within the tier's range
+3. A 5-character enemy team
+4. Each enemy has equal power (total / 5)
+
+## Bond System
+
+### Bond Levels
+
+Characters can reach **Bond Level 50** through gifting:
+
+- Start at Bond Level 0
+- Gain XP by gifting bond items
+- Level up when XP reaches the threshold
+- XP requirement increases per level
+
+**XP Formula:**
+```
+Required XP = calculate_bond_exp_required(current_level)
+```
+
+### Bond Item Values
+
+| Item | XP Value | Typical Source |
+|------|----------|----------------|
+| Faint Tincture | 10 | R Tier Bounties |
+| Vital Draught | 50 | SR Tier Bounties |
+| Heart Elixirs | 250 | SSR Tier Bounties |
+| Essence of Devotion | 2,500 | UR Tier Bounties |
+
+<Warning>
+You cannot gift to characters that are already at Bond Level 50!
+</Warning>
+
+## Rewards
+
+### Per-Battle Rewards
+
+<AccordionGroup>
+  <Accordion title="R Tier Victory" icon="circle">
+    **1x Faint Tincture** (10 Bond XP)
+  </Accordion>
+  
+  <Accordion title="SR Tier Victory" icon="star">
+    **1x Vital Draught** (50 Bond XP)
+  </Accordion>
+  
+  <Accordion title="SSR Tier Victory" icon="gem">
+    **1x Heart Elixirs** (250 Bond XP)
+  </Accordion>
+  
+  <Accordion title="UR Tier Victory" icon="crown">
+    - **1x Essence of Devotion** (2,500 Bond XP)
+    - **50 Coins**
+    - **5,000 Gems**
+  </Accordion>
+</AccordionGroup>
+
+### Achievement Progress
+
+Bounty victories contribute to achievements:
+
+- **R_TAKEDOWN**: Defeat an R Tier bounty
+- **SR_TAKEDOWN**: Defeat an SR Tier bounty
+- **SSR_TAKEDOWN**: Defeat an SSR Tier bounty
+- **UR_TAKEDOWN**: Defeat a UR Tier bounty
+- **VETERAN_HUNTER**: Complete X total bounties
+
+<Info>
+Achievements are tracked automatically when you win bounty battles!
+</Info>
+
+## Example Hunt Flow
+
+<Steps>
+  <Step title="Open Bounty Board">
+    ```
+    !bounty
+    ```
+    
+    📜 **Bounty Board Requests**
+    
+    **Keys:** 3/3 🔑
+    
+    **Slot 1: SR Tier**
+    - Status: ⚔️ Available
+    - Power: 52,000
+    - Reward: Vital Draught
+  </Step>
+  
+  <Step title="Start Hunt">
+    ```
+    !hunt
+    ```
+    
+    🎯 Interactive menu appears with dropdown to select slot.
+  </Step>
+  
+  <Step title="Select Target">
+    Choose **Slot 1 (SR Tier)** from the dropdown.
+    
+    Enemy team intelligence is revealed:
+    - SR Enemy (Power: 10,400)
+    - SR Enemy (Power: 10,400)
+    - SR Enemy (Power: 10,400)
+    - SR Enemy (Power: 10,400)
+    - SR Enemy (Power: 10,400)
+  </Step>
+  
+  <Step title="Confirm Battle">
+    Press **⚔️ FIGHT** button.
+    
+    Battle processes automatically.
+  </Step>
+  
+  <Step title="View Results">
+    **BATTLE RESULT: WIN**
+    
+    Your Power: 58,450
+    
+    Enemy Power: 52,000
+    
+    **Loot:** 1x Vital Draught
+  </Step>
+</Steps>
+
+## Strategy Tips
+
+<CardGroup cols={2}>
+  <Card title="Save Keys for Tough Targets" icon="key">
+    Don't waste keys on bounties you might lose. Check enemy power first.
+  </Card>
+  
+  <Card title="Complete High Tiers" icon="trophy">
+    SSR and UR bounties give vastly more bond XP - prioritize them when available.
+  </Card>
+  
+  <Card title="Track Refresh Times" icon="clock">
+    Bounties refresh every hour. Plan your hunts around when you'll be available.
+  </Card>
+  
+  <Card title="Use Skills Wisely" icon="sparkles">
+    Combat skills can tip close battles in your favor. Team composition matters!
+  </Card>
+</CardGroup>
+
+## Completion Status
+
+Each slot tracks your attempt status:
+
+- **⚔️ Available**: You haven't attempted this slot yet
+- **✅ Completed**: You defeated this bounty
+- **❌ Failed**: You attempted but lost
+
+<Warning>
+Once you attempt a slot (win or lose), you cannot retry it until the board refreshes!
+</Warning>
+
+## Key Regeneration Fix
+
+<Info>
+The key regeneration system has been patched to prevent infinite key exploits. Keys properly regenerate 1 per hour at the top of the hour.
+</Info>
+
+### How Keys Regenerate
+
+1. When you use a key, the system records the timestamp
+2. Every hour that passes grants +1 key
+3. Keys cap at 3 maximum
+4. When at max keys, the timer resets to the current hour
+
+**Example:**
+- You have 3/3 keys at 2:30 PM
+- You hunt at 2:45 PM → 2/3 keys
+- At 3:00 PM, you regenerate → 3/3 keys
+- Next key would come at 4:00 PM (but you're capped)
+
+## Gift System Details
+
+### Batch Gifting
+
+The `!gift` command supports bundling multiple gifts:
+
+```
+!gift 101 small 5 ! 102 med 1 ! 103 large 2
+```
+
+This command:
+1. Validates you own all items needed
+2. Processes each gift sequentially
+3. Shows results for each unit
+
+### Level Up Messages
+
+**If character levels up:**
+```
+✅ Aqua: +50 XP 🆙 Lv. 3 ➜ 5
+```
+
+**If character gains XP but doesn't level:**
+```
+✅ Megumin: +10 XP (45/100)
+```
+
+**If character is max level:**
+```
+⚠️ Kazuma is already Max Bond (50).
+```
+
+<Tip>
+Use the separator `!` to gift multiple units in one command and save time!
+</Tip>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="What happens if I lose a bounty hunt?" icon="question">
+    You still consume 1 key and the slot is marked as **Failed**. You cannot retry until the board refreshes.
+  </Accordion>
+  
+  <Accordion title="Can I hunt the same slot multiple times?" icon="question">
+    No. Each slot can only be attempted once per hour. The board resets every hour.
+  </Accordion>
+  
+  <Accordion title="Do keys regenerate faster if I'm offline?" icon="question">
+    No, keys regenerate at 1 per hour regardless of online status. However, time still passes offline.
+  </Accordion>
+  
+  <Accordion title="What's the best tier to farm?" icon="question">
+    SSR tiers offer the best balance of difficulty and reward. UR is rare but extremely valuable.
+  </Accordion>
+</AccordionGroup>

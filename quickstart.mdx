@@ -1,80 +1,154 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get Project Stardust up and running in minutes
 ---
 
-## Get started in three steps
+Get your Project Stardust bot running in just a few steps. This guide will have you pulling characters and battling in no time.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+<Note>
+  Project Stardust requires **Python 3.8 or higher** and a **PostgreSQL database** (we recommend Supabase).
+</Note>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+Before you begin, make sure you have:
+- Python 3.8+ installed
+- A Discord bot token
+- A PostgreSQL database URL (Supabase recommended)
+- Git installed
 
-### Step 2: Deploy your changes
+## Quick setup
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Project Stardust repository to your local machine:
+
+    ```bash
+    git clone https://github.com/itstrudeauver/twt.git
+    cd twt
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required Python packages:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    This installs:
+    - `discord.py` - Discord bot framework
+    - `asyncpg` - PostgreSQL async driver
+    - `aiohttp` - HTTP client for AniList API
+    - `Pillow` - Image generation
+    - `python-dotenv` - Environment variable management
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in the root directory with your credentials:
+
+    ```bash
+    DISCORD_TOKEN=your_discord_bot_token_here
+    DATABASE_URL=postgresql://user:password@host:port/database
+    COMMAND_PREFIX=!
+    PORT=8080
+    ```
+
+    <Warning>
+      Never commit your `.env` file to version control. Add it to `.gitignore` to keep your credentials safe.
+    </Warning>
+
+    **Getting a Discord bot token:**
+    1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+    2. Create a new application
+    3. Go to the "Bot" section and click "Add Bot"
+    4. Copy the token and paste it into your `.env` file
+
+    **Setting up Supabase (recommended):**
+    1. Create a free account at [Supabase](https://supabase.com)
+    2. Create a new project
+    3. Go to Settings → Database and copy the connection string
+    4. Use the "Session" mode connection string for the free tier
+  </Step>
+
+  <Step title="Run the bot">
+    Start Project Stardust:
+
+    ```bash
+    python main.py
+    ```
+
+    You should see output like this:
+
+    ```
+    📡 Health check server live on port 8080
+    🗄️  Connecting to Supabase...
+    ✅ Database initialized successfully.
+    ⚙️  Loading Modules...
+       ✅ Loaded: achievements.py
+       ✅ Loaded: admin.py
+       ✅ Loaded: battle.py
+       ✅ Loaded: gacha.py
+       ...
+    --------------------------------------------------
+    ✨ Project Stardust is Online as: YourBotName
+    --------------------------------------------------
+    ```
+  </Step>
+
+  <Step title="Test the bot">
+    Invite your bot to a Discord server and try these commands:
+
+    ```
+    !help           # View all available commands
+    !starter        # Claim your free starter pack
+    !team           # View your team
+    !pull 10        # Pull 10 characters (requires gems)
+    ```
+
+    Your bot is now ready to use!
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<Accordion title="Bot won't start - Discord token error">
+  Make sure your `DISCORD_TOKEN` in the `.env` file is correct and has no extra spaces. The token should start with something like `MTAx...`
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Accordion title="Database connection failed">
+  - Verify your `DATABASE_URL` is correct
+  - For Supabase free tier, use the "Session" mode connection string, not "Transaction" mode
+  - Check that your database allows connections from your IP address
+  - The connection pool is configured for max 3 connections to work with Supabase's limits
+</Accordion>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+<Accordion title="Cogs failed to load">
+  - Make sure you're running Python 3.8 or higher
+  - Verify all dependencies from `requirements.txt` are installed
+  - Check the error message for specific missing modules
+</Accordion>
 
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
+<Accordion title="AniList API errors">
+  The bot uses the public AniList GraphQL API. If you see API errors:
+  - Check your internet connection
+  - The API might be temporarily down (rare)
+  - Rate limits are handled automatically by the caching system
 </Accordion>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Detailed setup" icon="gear" href="/setup">
+    Learn about advanced configuration options and hosting
+  </Card>
+  <Card title="Core systems" icon="cube" href="/systems/gacha">
+    Understand how the gacha, battles, and progression work
+  </Card>
+  <Card title="Command reference" icon="terminal" href="/commands/overview">
+    Explore all available commands and their usage
+  </Card>
+  <Card title="Technical docs" icon="code" href="/technical/architecture">
+    Dive into the bot's architecture and skills system
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

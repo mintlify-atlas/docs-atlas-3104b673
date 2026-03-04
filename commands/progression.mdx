@@ -1,0 +1,763 @@
+---
+title: Progression Commands
+description: Daily tasks, inventory management, economy, and character progression in Project Stardust
+---
+
+## Daily Activities
+
+### checkin
+
+Claim your daily login reward.
+
+```bash
+!checkin
+```
+
+**Rewards:**
+- 1,500 Gems per day
+- Tracks login streak
+- Resets at 00:00 UTC
+
+**Streak System:**
+- Consecutive daily logins increase your streak
+- Missing a day resets streak to 1
+- Streak data tracked for achievements
+
+<Note>
+You can only check in once per UTC day. The timer resets at midnight UTC.
+</Note>
+
+---
+
+## Daily Battle Tasks
+
+### tasks
+
+View all available daily battle objectives and their completion status.
+
+```bash
+!tasks
+```
+
+**Available Tasks:**
+
+| Task | Description | Reward |
+|------|-------------|--------|
+| PVP | Battle any player | 500 Gems |
+| Easy | Defeat Easy NPC | 500 Gems |
+| Normal | Defeat Normal NPC | 1,000 Gems |
+| Hard | Defeat Hard NPC | 1,500 Gems |
+| Expert | Defeat Expert NPC | 2,500 Gems |
+| Nightmare | Defeat Nightmare NPC | 3,500 Gems |
+| Hell | Defeat Hell NPC | 5,000 Gems |
+
+**Total Possible Daily Gems:** 14,500 from tasks + 1,500 from check-in = **16,000 Gems/day**
+
+**Task Status Icons:**
+- ⏳ 0/1 - Not completed
+- 🎁 !claim [task] - Completed, ready to claim
+- ✅ Claimed - Already claimed today
+
+**Reset:** All tasks reset at 00:00 UTC daily.
+
+### claim
+
+Claim reward for a single completed task.
+
+```bash
+!claim <task_name>
+```
+
+<ParamField path="task_name" type="string" required>
+  Task identifier: pvp, easy, normal, hard, expert, nightmare, or hell
+</ParamField>
+
+**Examples:**
+```bash
+!claim pvp         # Claim PVP task reward
+!claim hard        # Claim Hard NPC reward
+!claim nightmare   # Claim Nightmare NPC reward
+```
+
+### claimall
+
+Claim all completed task rewards at once.
+
+```bash
+!claimall
+```
+
+**Aliases:** `claim_all`
+
+**Behavior:**
+- Automatically finds all completed unclaimed tasks
+- Sums up total gem reward
+- Claims everything in one transaction
+- Shows list of claimed tasks
+
+**Example Output:**
+```
+🎉 Bulk Claimed 5,500 Gems!
+Tasks: Pvp, Easy, Normal, Hard
+```
+
+<Tip>
+Use `!claimall` at the end of your gaming session to collect all rewards efficiently.
+</Tip>
+
+---
+
+## Expeditions
+
+Expeditions provide **passive gem generation** while your team is deployed.
+
+### expedition
+
+Manage your expedition team and claim rewards.
+
+```bash
+!expedition [action]
+```
+
+**Aliases:** `ex`
+
+<ParamField path="action" type="string" default="status">
+  Action to perform: status, start, or claim
+</ParamField>
+
+#### Status (Default)
+
+```bash
+!ex
+!ex status
+```
+
+Shows:
+- Current expedition status (Idle or Active)
+- Time elapsed if active
+
+#### Start Expedition
+
+```bash
+!ex start
+```
+
+Begins an expedition with your current expedition team.
+
+**Requirements:**
+- Must have at least 1 character in expedition team
+- No expedition currently running
+
+#### Claim Rewards
+
+```bash
+!ex claim
+```
+
+Collects accumulated gems and XP from completed expedition.
+
+**Minimum Duration:** 1 minute
+
+**Rewards:**
+- **Gems** - Based on team power and duration
+- **Team XP** - 1 XP per minute
+- **Level Ups** - Automatic when XP threshold reached
+
+**Base Yield Formula:**
+```
+Gems = (Total Team Power × Duration in Hours × 0.1)
+```
+
+**Skill Multipliers:**
+- **Hardworker** - +15% per character (stackable)
+- **Master of Coin** - +10% per character owned (global, stackable)
+- **The Long Road** - Up to +24% based on duration (24hr max)
+
+**Example Calculation:**
+```
+Team Power: 50,000
+Duration: 6 hours
+Skills: 2x Hardworker (+30%), 1x Long Road (+6%)
+
+Base = 50,000 × 6 × 0.1 = 30,000
+Multiplier = 1.0 + 0.30 + 0.06 = 1.36x
+Final = 30,000 × 1.36 = 40,800 Gems
+```
+
+### set_expedition
+
+Assign characters to your expedition team.
+
+```bash
+!set_expedition <id1> [id2] [id3] [id4] [id5]
+```
+
+**Aliases:** `se`
+
+See [Team Management](/commands/team-management#set_expedition) for details.
+
+---
+
+## Team Leveling
+
+### Level System
+
+Team Level provides a **permanent global power boost**:
+- +1% power per level to **ALL characters**
+- Applies in battles, raids, and expeditions
+- Levels up by earning Team XP
+
+### Earning Team XP
+
+**Expedition Rewards:**
+- 1 XP per minute of expedition time
+- Claim with `!ex claim`
+
+**XP Requirements:**
+```
+XP Required = Level² × 100
+```
+
+**Examples:**
+- Level 1 → 2: 100 XP
+- Level 5 → 6: 2,500 XP
+- Level 10 → 11: 10,000 XP
+
+### Level Benefits
+
+**Power Scaling:**
+```
+Boosted Power = Base Power × (1 + Team_Level × 0.01)
+```
+
+**At Level 30:**
+- Unlock 25% shop discount
+- +30% power boost to all characters
+
+<Tip>
+**Efficient Leveling:** Run long overnight expeditions (8-24 hours) to maximize XP gains.
+</Tip>
+
+---
+
+## Inventory Management
+
+### inventory
+
+View your character collection with pagination.
+
+```bash
+!inventory
+```
+
+**Aliases:** `inv`, `chars`, `box`, `units`
+
+**Display Format:**
+- 10 characters per page
+- Sorted by power (highest first)
+- Shows: ID, rarity, name, power, dupe level, bond level, lock status
+
+**Icons:**
+- 🔒 - Locked character
+- Rarity emotes (SSR/SR/R)
+- Bond and dupe indicators
+
+**Navigation:**
+- ⬅️ Previous - Go to previous page
+- Next ➡️ - Go to next page
+
+### view
+
+View detailed information about a specific character.
+
+```bash
+!view <inventory_id>
+```
+
+<ParamField path="inventory_id" type="integer" required>
+  Character's inventory ID (from !inventory)
+</ParamField>
+
+**Shows:**
+- Character name and image
+- Rarity
+- Current power (with bonuses)
+- Dupe level (0-10)
+- Bond level and EXP
+- Lock status
+- Skills/Abilities
+
+**Example:**
+```bash
+!view 123
+```
+
+### lock
+
+Protect characters from accidental scrapping.
+
+```bash
+!lock <id1> [id2] [id3] ...
+```
+
+<ParamField path="ids" type="integer..." required>
+  One or more inventory IDs to lock
+</ParamField>
+
+**Examples:**
+```bash
+!lock 123           # Lock one character
+!lock 1 5 12 45     # Lock multiple characters
+```
+
+### unlock
+
+Remove lock protection from characters.
+
+```bash
+!unlock <id1> [id2] [id3] ...
+```
+
+<ParamField path="ids" type="integer..." required>
+  One or more inventory IDs to unlock
+</ParamField>
+
+**Examples:**
+```bash
+!unlock 123         # Unlock one character
+!unlock 1 5 12      # Unlock multiple
+```
+
+---
+
+## Scrapping System
+
+### scrap_r
+
+Scrap all unlocked R-rarity characters for gems and coins.
+
+```bash
+!scrap_r
+```
+
+**Aliases:** `scrap_all`
+
+**Rewards per R:**
+- 100 Gems
+- 5 Coins
+
+**Safety:**
+- Only scraps **unlocked** R units
+- Locked R characters are protected
+- Instant execution (no confirmation)
+
+**Use Case:** Quickly clear inventory space and convert commons to currency.
+
+### scrap_sr
+
+Scrap all unlocked SR-rarity characters.
+
+```bash
+!scrap_sr
+```
+
+**Rewards per SR:**
+- 500 Gems
+- 25 Coins
+
+**Safety Features:**
+- Confirmation required (⚠️ Warning button)
+- Only scraps **unlocked** SR units
+- Locked SR characters protected
+
+<Warning>
+**Careful!** SR characters may have valuable skills. Review your SRs and lock the ones you want to keep before using this command.
+</Warning>
+
+---
+
+## Economy
+
+### gems
+
+Check your current gem and coin balance.
+
+```bash
+!gems
+```
+
+**Aliases:** `pc`, `wallet`, `cur`
+
+**Shows:**
+- Gacha Gems count
+- Coins count
+
+### profile
+
+View comprehensive user statistics.
+
+```bash
+!profile [user]
+```
+
+**Aliases:** `p`, `user`
+
+<ParamField path="user" type="@mention">
+  User to view. Defaults to yourself.
+</ParamField>
+
+**Displays:**
+
+**Resources:**
+- Gems balance
+- Coins balance  
+- Team Level and current XP
+
+**Achievements:**
+- Total achievements earned count
+
+**Soulmates:**
+- Characters at Bond Level 50
+- Names listed
+
+**Examples:**
+```bash
+!profile            # Your profile
+!p @username        # Another user's profile
+```
+
+---
+
+## Items & Consumables
+
+### items
+
+View your special items and consumables inventory.
+
+```bash
+!items
+```
+
+**Aliases:** `bag`, `item`
+
+**Shows:**
+- Coin balance
+- Bond potions (Small, Medium, Large, UR)
+- SSR Tokens
+- Other consumable items
+
+**Item Types:**
+
+| Item | Icon | Description |
+|------|------|-------------|
+| Faint Tincture | 🧪 | Small bond EXP boost |
+| Vital Draught | 💉 | Medium bond EXP boost |
+| Heart Elixirs | 💝 | Large bond EXP boost |
+| Essence of Devotion | 💎 | UR bond EXP boost |
+| SSR Token | 🎟️ | Upgrade SSR to next dupe level |
+
+### use_token
+
+Use an SSR Token to upgrade an SSR character's dupe level.
+
+```bash
+!use_token <inventory_id>
+```
+
+**Aliases:** `ut`
+
+<ParamField path="inventory_id" type="integer" required>
+  Inventory ID of SSR character to upgrade
+</ParamField>
+
+**Requirements:**
+- Must own at least 1 SSR Token
+- Character must be SSR rarity
+- Character must be below max dupes (10)
+
+**Effect:**
+- Consumes 1 SSR Token
+- Increases dupe level by 1
+- Grants +5% power boost
+
+**Example:**
+```bash
+!use_token 123
+# Output: Success! Upgraded Kirito to Dupe Lv. 6!
+```
+
+---
+
+## Shop System
+
+### shop
+
+View and purchase from the daily rotating character shop.
+
+```bash
+!shop
+```
+
+**Rotation:**
+- Resets daily
+- 2 SSR characters
+- 3 SR characters
+- 5 R characters
+
+**Pricing:**
+- R: 1,000 Gems
+- SR: 20,000 Gems
+- SSR: 100,000 Gems
+- Rate-up characters: +20% price
+
+**Level 30+ Discount:**
+- 25% off all purchases
+- Permanent benefit
+- Applies automatically
+
+**Purchase Method:**
+- Click dropdown menu in embed
+- Select character
+- Instant purchase if affordable
+- Adds to inventory or increases dupe level
+
+### itemshop
+
+Purchase special consumable items.
+
+```bash
+!itemshop
+```
+
+**Aliases:** `ishop`, `items_shop`
+
+**Available Items:**
+
+| Item | Cost | Currency |
+|------|------|----------|
+| SSR Token | 2,000 | Coins |
+
+**Purchase Method:**
+- Dropdown menu selection
+- Instant purchase
+- Added to items inventory
+
+### buy_token
+
+Quickly purchase SSR Tokens without opening item shop.
+
+```bash
+!buy_token [amount]
+```
+
+<ParamField path="amount" type="integer" default="1">
+  Number of tokens to purchase
+</ParamField>
+
+**Cost:** 2,000 Coins per token
+
+**Examples:**
+```bash
+!buy_token         # Buy 1 token
+!buy_token 5       # Buy 5 tokens (10,000 Coins)
+```
+
+---
+
+## Achievements
+
+### achievements
+
+View your earned achievements and badges.
+
+```bash
+!achievements [user]
+```
+
+**Aliases:** `ach`, `badges`
+
+<ParamField path="user" type="@mention">
+  User to view. Defaults to yourself.
+</ParamField>
+
+**Display Modes:**
+
+**Badge Wall:**
+- Visual grid of all achievement badges
+- Unlocked badges shown with full color
+- Locked badges shown as 🔒
+- Multiple pages if needed
+
+**Detail List:**
+- 10 achievements per page
+- Shows name and description
+- ✅ for unlocked, 🔒 for locked
+- Toggle between views with "📜 List" button
+
+**Navigation:**
+- ◀️ / ▶️ buttons for pages
+- 📛 Badges / 📜 List toggle button
+- Shows progress: "Unlocked: X/Y"
+
+**Automatic Tracking:**
+- Achievements check after every command
+- Notification sent when unlocked
+- Rewards auto-claimed
+
+---
+
+## Raid System
+
+Raids are special boss battles with leaderboards.
+
+### raid
+
+View current active raid boss and your stats.
+
+```bash
+!raid
+```
+
+**Shows:**
+- Boss name, description, and image
+- Boss HP and ATK stats
+- Your remaining tickets (3/day)
+- Your best damage record
+- Top 3 leaderboard
+- Event end time
+
+### raid_fight
+
+Start a raid attempt against the active boss.
+
+```bash
+!raid_fight
+```
+
+**Aliases:** `raidfight`
+
+**Requirements:**
+- Active raid event
+- At least 1 ticket remaining
+- Battle team set with `!stb`
+
+**Mechanics:**
+- Turn-based combat
+- Boss attacks left-to-right
+- Your team counters each turn
+- Live updates show turn-by-turn progress
+- Boss HP bar visualization
+- Detailed battle log
+
+**Tickets:**
+- 3 tickets per day
+- Resets at 00:00 UTC
+- Consumed whether you win or lose
+
+**Scoring:**
+- Best damage recorded to leaderboard
+- Multiple attempts allowed
+- Only your highest score counts
+
+**Interactive Replay:**
+- Navigate turns with ◀️ / ▶️ buttons
+- Review skill activations
+- Analyze strategy
+
+### raid_lb
+
+View the full raid leaderboard.
+
+```bash
+!raid_lb
+```
+
+**Aliases:** `raidlb`
+
+**Shows:**
+- Player rankings by damage dealt
+- Turns survived
+- Paginated (10 per page)
+- 👑 for rank 1
+
+### raid_info
+
+Get detailed information about raid mechanics.
+
+```bash
+!raid_info
+```
+
+**Covers:**
+- How turn-based combat works
+- HP = Power system
+- Positioning importance
+- Daily ticket system
+- Strategy tips
+
+<Tip>
+**Raid Strategy:** Place your highest HP characters in the front slots since the boss attacks left-to-right!
+</Tip>
+
+---
+
+## Buy System
+
+### buy
+
+Exchange UnbelievaBoat credits for Gacha Gems (if enabled).
+
+```bash
+!buy <amount>
+```
+
+<ParamField path="amount" type="integer" required>
+  Number of pulls worth of gems to purchase
+</ParamField>
+
+**Conversion:**
+- 1 pull = 1,000 Gems
+- Uses external currency integration
+
+<Note>
+This command may be disabled on some servers. Check with `!help buy` to see if it's available.
+</Note>
+
+---
+
+## Tips & Optimization
+
+<Tip>
+**Daily Routine:**
+1. `!checkin` for 1,500 gems
+2. Battle all difficulties you can handle
+3. `!claimall` to collect task rewards
+4. Start overnight expedition before bed
+5. `!ex claim` in morning
+</Tip>
+
+<Tip>
+**Gem Maximization:**
+- Focus on clearing higher difficulty NPC battles (more gems)
+- Run 24-hour expeditions for maximum XP and gems
+- Level up to 30 for shop discount
+- Complete achievements for bonus rewards
+</Tip>
+
+<Tip>
+**Inventory Management:**
+- Lock all SSR and important SR characters
+- Regularly `!scrap_r` to clear commons
+- Save coins for SSR Tokens
+- Use tokens on your main team members
+</Tip>
+
+---
+
+## Related Commands
+
+- [`!pull`](/commands/gacha#pull) - Use gems to summon
+- [`!battle`](/commands/battle) - Complete daily tasks
+- [`!team`](/commands/team-management) - Manage teams
+- [`!stb`](/commands/team-management#set_team_battle) - Set battle team
+- [`!se`](/commands/team-management#set_expedition) - Set expedition team

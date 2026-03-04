@@ -1,0 +1,465 @@
+---
+title: Inventory System
+description: Manage your character collection with locking, scrapping, bond levels, and dupe tracking
+---
+
+## Overview
+
+The inventory system manages all characters you've pulled, tracking duplicates, bond levels, lock status, and power calculations. Each character is stored with a unique inventory ID.
+
+## Inventory Structure
+
+```sql
+CREATE TABLE inventory (
+    id SERIAL PRIMARY KEY,                      -- Unique inventory ID
+    user_id TEXT REFERENCES users(user_id),
+    anilist_id INTEGER,                         -- Character's AniList ID
+    dupe_level INTEGER DEFAULT 0,               -- 0-10 dupe levels
+    bond_level INTEGER DEFAULT 1,               -- Bond level (1-50)
+    bond_exp INTEGER DEFAULT 0,                 -- Bond experience
+    obtained_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_locked BOOLEAN DEFAULT FALSE,
+    UNIQUE(user_id, anilist_id)                 -- One row per character
+)
+```
+
+<Note>
+Each character gets ONE inventory row. Duplicates increase `dupe_level` instead of creating new rows.
+</Note>
+
+## Commands
+
+### View Inventory
+
+<CodeGroup>
+```bash View Your Inventory
+!inventory
+!inv
+!box
+!chars
+!units
+```
+</CodeGroup>
+
+Displays paginated inventory with 10 characters per page, sorted by power (descending).
+
+**Output Format**:
+```
+🎒 PlayerName's Inventory
+💎 Gems: 25,000
+📦 Total Units: 47
+─────────────────────────
+#101 ⭐ Spike Spiegel (+6) 🔒
+ 💖10 — ⚡125,450
+#205 ⭐ Edward Elric (+4)
+ 💖5 — ⚡98,320
+...
+
+Page 1 of 5 | Use !view [ID]
+```
+
+### View Character Details
+
+```bash
+!view [inventory_id]
+```
+
+<ParamField path="inventory_id" type="integer" required>
+  The unique inventory ID (from `!inventory` command)
+</ParamField>
+
+Displays full character information:
+
+```python
+row = await pool.fetchrow("""
+    SELECT 
+        i.id, c.name, c.image_url, c.rarity, c.ability_tags, 
+        i.is_locked, i.dupe_level, i.bond_level, i.bond_exp,
+        FLOOR(c.true_power * (1 + (i.dupe_level * 0.05)) * (1 + (i.bond_level * 0.005))) as true_power
+    FROM inventory i
+    JOIN characters_cache c ON i.anilist_id = c.anilist_id
+    WHERE i.id = $1 AND i.user_id = $2
+""", inventory_id, str(ctx.author.id))
+```
+
+**Output**:
+```
+Spike Spiegel
+[Character Image]
+
+DETAILS
+Rarity: SSR
+Power: 125,450
+Dupes: 6
+Bond: Lv. 10 (EXP: 2500)
+Status: 🔒 Locked
+
+SKILLS
+• Burst Fire
+• Tank Buster
+```
+
+### Profile
+
+<CodeGroup>
+```bash Your Profile
+!profile
+!p
+!user
+```
+
+```bash Another User
+!profile @username
+```
+</CodeGroup>
+
+Displays user stats, achievements, and soulmates (characters at Bond 50).
+
+**Output**:
+```
+👤 PlayerName's Profile
+[Avatar]
+
+RESOURCES
+💎 Gems: 25,000
+🪙 Coins: 1,250
+📈 Team Level: 15 (XP: 3400)
+
+🏆 ACHIEVEMENTS
+Total Earned: 12
+
+💖 SOULMATES (3)
+Spike Spiegel, Edward Elric, Sailor Moon
+
+ID: 123456789
+```
+
+## Character Locking
+
+Lock characters to prevent accidental scrapping.
+
+### Lock Characters
+
+```bash
+!lock [ids...]
+```
+
+**Example**:
+```bash
+!lock 101 205 389
+```
+
+Locks multiple characters at once using PostgreSQL's `ANY()` operator:
+
+```python
+await pool.execute(
+    "UPDATE inventory SET is_locked = TRUE WHERE id = ANY($1) AND user_id = $2", 
+    list(inventory_ids), str(ctx.author.id)
+)
+```
+
+### Unlock Characters
+
+```bash
+!unlock [ids...]
+```
+
+**Example**:
+```bash
+!unlock 101 205
+```
+
+<Warning>
+Unlocked characters can be mass-scrapped. Always lock your favorites!
+</Warning>
+
+## Scrapping System
+
+Convert unwanted characters into currency.
+
+### Manual Scrap (R Rarity)
+
+<CodeGroup>
+```bash Mass Scrap R
+!scrap_r
+!scrap_all
+```
+</CodeGroup>
+
+Scraps **all unlocked R-rarity** characters.
+
+**Rewards per R character**:
+- 100 Gems
+- 5 Coins
+
+```python
+async def mass_scrap_r_rarity(user_id):
+    query = """
+        DELETE FROM inventory
+        WHERE user_id = $1 
+        AND is_locked = FALSE
+        AND anilist_id IN (
+            SELECT anilist_id FROM characters_cache WHERE rarity = 'R'
+        )
+        RETURNING id
+    """
+    deleted_rows = await conn.fetch(query, str(user_id))
+    count = len(deleted_rows)
+    
+    gems = count * 100
+    coins = count * 5
+```
+
+### Manual Scrap (SR Rarity)
+
+```bash
+!scrap_sr
+```
+
+Scraps **all unlocked SR-rarity** characters with confirmation.
+
+**Rewards per SR character**:
+- 500 Gems
+- 25 Coins
+
+**Confirmation Flow**:
+```
+⚠️ WARNING: This will scrap ALL unlocked SR units for 500 Gems + 25 Coins each.
+Please check if you locked the ones you want to keep!
+
+[⚠️ Confirm Scrap SRs] [Cancel]
+```
+
+### Auto-Scrap (Max Dupes)
+
+Characters at max dupes (10) are **automatically scrapped** when pulled:
+
+```python
+if row['dupe_level'] < 10:
+    await conn.execute(
+        "UPDATE inventory SET dupe_level = dupe_level + 1 WHERE user_id = $1 AND anilist_id = $2"
+    )
+else:
+    # At max dupes: scrap instead
+    total_scrapped_gems += scrap_values.get(rarity, 0)
+    total_scrapped_coins += scrap_coins_values.get(rarity, 0)
+```
+
+### Scrap Value Table
+
+| Rarity | Gems | Coins | Ratio |
+|--------|------|-------|-------|
+| R | 100 | 5 | 20:1 |
+| SR | 500 | 25 | 20:1 |
+| SSR | 10,000 | 500 | 20:1 |
+
+## Duplicate System
+
+Duplicates increase power instead of cluttering inventory.
+
+### How Dupes Work
+
+- **Max Dupe Level**: 10
+- **Power Bonus**: +5% per level
+- **Max Bonus**: +50% at level 10
+
+```python
+boosted_power = base_power * (1 + (dupe_level * 0.05))
+```
+
+### Dupe Tracking
+
+```python
+if not row:
+    # New character: insert with dupe_level 0
+    await conn.execute(
+        "INSERT INTO inventory (user_id, anilist_id, dupe_level) VALUES ($1, $2, 0)"
+    )
+elif row['dupe_level'] < 10:
+    # Under the cap: increment
+    await conn.execute(
+        "UPDATE inventory SET dupe_level = dupe_level + 1 WHERE user_id = $1 AND anilist_id = $2"
+    )
+```
+
+<Tip>
+A character at dupe level 6 means you pulled it 7 times (base + 6 dupes).
+</Tip>
+
+## Bond System
+
+Build relationships with characters to unlock power bonuses.
+
+### Bond Levels
+
+- **Level Range**: 1-50
+- **Power Bonus**: +0.5% per level
+- **Max Bonus**: +25% at level 50
+- **Soulmate**: Characters at Bond 50
+
+```python
+bond_bonus = bond_level * 0.005  # 0.5% per level
+final_power = base_power * (1 + bond_bonus)
+```
+
+### Bond Display
+
+Bond levels are shown in inventory with emoji:
+
+```python
+if row['bond_level'] > 0: 
+    bond_text += f" {Emotes.BOND}{row['bond_level']}"
+```
+
+## Items System
+
+Store and use consumable items.
+
+### View Items
+
+<CodeGroup>
+```bash View Items
+!items
+!bag
+!item
+```
+</CodeGroup>
+
+**Output**:
+```
+🎒 PlayerName's Items
+
+Currency
+🪙 Coins: 1,250
+
+Consumables
+• 🧪 Faint Tincture: 5
+• ⚗️ Vital Draught: 3
+• 🍷 Heart Elixirs: 1
+• 🔷 SSR Token: 2
+```
+
+### Item Types
+
+```python
+item_map = {
+    "bond_small": f"{Emotes.R_BOND} Faint Tincture",
+    "bond_med": f"{Emotes.SR_BOND} Vital Draught",
+    "bond_large": f"{Emotes.SSR_BOND} Heart Elixirs",
+    "bond_ur": f"{Emotes.UR_BOND} Essence of Devotion",
+    "SSR Token": f"{Emotes.SSRTOKEN} SSR Token",
+}
+```
+
+### Use SSR Token
+
+<CodeGroup>
+```bash Use Token
+!use_token [inventory_id]
+!ut [inventory_id]
+```
+</CodeGroup>
+
+Upgrades an SSR character's dupe level by 1.
+
+**Requirements**:
+- Must own an SSR Token
+- Character must be SSR rarity
+- Dupe level must be below 10
+
+```python
+if not token_row or token_row['quantity'] < 1:
+    return await ctx.reply(f"❌ You do not have an **SSR Token**!")
+
+if char_row['rarity'] != 'SSR': 
+    return await ctx.reply("❌ Only for **SSR** characters.")
+
+if char_row['dupe_level'] >= 10: 
+    return await ctx.reply("❌ Already at Max Dupes!")
+
+async with conn.transaction():
+    await conn.execute(
+        "UPDATE user_items SET quantity = quantity - 1 WHERE user_id = $1 AND item_id = 'SSR Token'"
+    )
+    await conn.execute(
+        "UPDATE inventory SET dupe_level = dupe_level + 1 WHERE id = $1", char_id
+    )
+```
+
+## Power Calculation
+
+Full power formula with all bonuses:
+
+```sql
+FLOOR(
+    c.true_power 
+    * (1 + (i.dupe_level * 0.05))      -- Dupe bonus: +5% per level
+    * (1 + (i.bond_level * 0.005))     -- Bond bonus: +0.5% per level
+) as true_power
+```
+
+### Example Calculation
+
+```python
+# Base stats
+base_power = 100,000
+dupe_level = 8      # +40%
+bond_level = 20     # +10%
+
+# Calculation
+final_power = 100000 * (1 + 0.40) * (1 + 0.10)
+final_power = 100000 * 1.40 * 1.10
+final_power = 154,000
+```
+
+<Note>
+Team level bonus (+1% per level) applies during battles and team view, but not in inventory.
+</Note>
+
+## Currency Display
+
+### Check Balance
+
+<CodeGroup>
+```bash Quick Balance
+!gems
+!pc
+!wallet
+!cur
+```
+</CodeGroup>
+
+**Output**:
+```
+@PlayerName, you currently have 25,000 💎 and 1,250 🪙
+```
+
+## Inventory Pagination
+
+The inventory view uses Discord UI for navigation:
+
+```python
+class InventoryView(discord.ui.View):
+    def __init__(self, bot, user, pool, per_page=10):
+        self.per_page = 10
+        self.max_pages = math.ceil(count_val / self.per_page)
+    
+    @discord.ui.button(label="⬅️ Previous", style=discord.ButtonStyle.primary)
+    async def prev_button(self, interaction, button):
+        self.page -= 1
+        embed = await self.get_page_content()
+        await interaction.response.edit_message(embed=embed, view=self)
+```
+
+**Features**:
+- 10 characters per page
+- Sorted by power (descending)
+- Shows dupe level, bond level, and lock status
+- Interactive buttons for navigation
+
+## Related Systems
+
+- [Gacha](/systems/gacha) - Obtaining characters
+- [Teams](/systems/teams) - Using inventory IDs in teams
+- [Economy](/systems/economy) - Managing gems and coins
+- [Battles](/systems/battles) - Power calculations in combat

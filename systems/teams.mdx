@@ -1,0 +1,311 @@
+---
+title: Team System
+description: Build 5-character battle teams with power calculations, team presets, and formation management
+---
+
+## Overview
+
+The team system allows you to create 5-character formations for battles. Teams calculate total power based on character stats, dupe levels, bond levels, and team level bonuses.
+
+## Team Structure
+
+Teams consist of **5 slots** that reference characters from your inventory:
+
+```sql
+CREATE TABLE teams (
+    user_id TEXT PRIMARY KEY,
+    slot_1 INTEGER DEFAULT NULL,
+    slot_2 INTEGER DEFAULT NULL,
+    slot_3 INTEGER DEFAULT NULL,
+    slot_4 INTEGER DEFAULT NULL,
+    slot_5 INTEGER DEFAULT NULL
+)
+```
+
+Each slot contains an **inventory ID** (not AniList ID), allowing you to have multiple copies of the same character in different slots.
+
+## Commands
+
+### Set Team
+
+<CodeGroup>
+```bash Full Team (5 slots)
+!set_team_battle 101 205 389 412 500
+!st 101 205 389 412 500
+```
+
+```bash Partial Team (3 slots)
+!stb 101 205 389
+!sbt 101 205 389
+```
+</CodeGroup>
+
+<ParamField path="s1" type="integer" required>
+  Inventory ID for slot 1
+</ParamField>
+
+<ParamField path="s2" type="integer">
+  Inventory ID for slot 2
+</ParamField>
+
+<ParamField path="s3" type="integer">
+  Inventory ID for slot 3
+</ParamField>
+
+<ParamField path="s4" type="integer">
+  Inventory ID for slot 4
+</ParamField>
+
+<ParamField path="s5" type="integer">
+  Inventory ID for slot 5
+</ParamField>
+
+**Validation**:
+- No duplicate inventory IDs allowed
+- All IDs must be owned by you
+- Empty slots are filled with `NULL`
+
+```python
+if len(set(clean_slots)) != len(clean_slots):
+    await ctx.reply("❌ Duplicate IDs detected!")
+```
+
+### View Team
+
+<CodeGroup>
+```bash Your Team
+!team
+```
+
+```bash Another User's Team
+!team @username
+```
+</CodeGroup>
+
+Displays team composition with power calculation and character images.
+
+**Output**:
+```
+Officer: PlayerName | Power: 487,320
+[Team banner image showing all 5 characters]
+```
+
+## Power Calculation
+
+Team power is calculated using multiple multipliers:
+
+```sql
+SELECT 
+    FLOOR(
+        c.true_power 
+        * (1 + (i.dupe_level * 0.05))      -- Dupe bonus: +5% per level
+        * (1 + (u.team_level * 0.01))      -- Team level: +1% per level
+    )::int as true_power
+FROM inventory i
+JOIN characters_cache c ON i.anilist_id = c.anilist_id
+JOIN users u ON i.user_id = u.user_id
+```
+
+### Bonus Breakdown
+
+| Bonus Type | Formula | Example |
+|------------|---------|----------|
+| **Base Power** | Character's `true_power` | 100,000 |
+| **Dupe Bonus** | `+5%` per dupe level (max 10) | Lv.4 = +20% |
+| **Team Level** | `+1%` per team level | Lv.15 = +15% |
+
+<Note>
+Bond level bonuses (+0.5% per level) apply in battles but not in team view.
+</Note>
+
+### Example Calculation
+
+```python
+# Base: 100,000
+# Dupe Level: 6 (+30%)
+# Team Level: 20 (+20%)
+
+final_power = 100000 * (1 + 0.30) * (1 + 0.20)
+final_power = 100000 * 1.30 * 1.20
+final_power = 156,000
+```
+
+## Team Presets
+
+Save and load team configurations instantly.
+
+### Save Preset
+
+```bash
+!save_team [name]
+```
+
+Saves your **current active team** as a preset.
+
+**Constraints**:
+- Max 15 characters per name
+- Names are case-insensitive (stored as lowercase)
+- Overwrites existing preset with same name
+
+```python
+if len(name) > 15:
+    return await ctx.reply("❌ Name too long (max 15 chars).")
+```
+
+### Load Preset
+
+<CodeGroup>
+```bash Load
+!load_team rush
+```
+
+```bash Alternative
+!equip_team defense
+```
+</CodeGroup>
+
+Replaces your active team with a saved preset.
+
+### View Presets
+
+```bash
+!presets
+```
+
+Displays all saved presets with character names in a paginated view.
+
+**Features**:
+- Shows 6 presets per page
+- Displays full character names (truncated at 25 chars)
+- Interactive pagination buttons
+
+```python
+class PresetView(View):
+    def __init__(self, ctx, data, pool):
+        super().__init__(timeout=60)
+        self.items_per_page = 6
+        self.total_pages = (len(data) - 1) // self.items_per_page + 1
+```
+
+### Preset Storage
+
+```sql
+CREATE TABLE team_presets (
+    user_id TEXT,
+    preset_name TEXT,
+    slot_1 INTEGER,
+    slot_2 INTEGER,
+    slot_3 INTEGER,
+    slot_4 INTEGER,
+    slot_5 INTEGER,
+    PRIMARY KEY (user_id, preset_name)
+)
+```
+
+## Team Data Retrieval
+
+The `get_team_data()` function fetches complete team information:
+
+```python
+async def get_team_data(self, user_id):
+    row = await conn.fetchrow(
+        "SELECT slot_1, slot_2, slot_3, slot_4, slot_5 FROM teams WHERE user_id = $1", 
+        str(user_id)
+    )
+    
+    team_list = []
+    total_power = 0
+    
+    for char_id in slot_ids:
+        if char_id is None:
+            team_list.append(None)
+            continue
+        
+        char_data = await conn.fetchrow("""
+            SELECT c.name, c.image_url, c.rarity, 
+                   FLOOR(c.true_power * (1 + (i.dupe_level * 0.05)) * (1 + (u.team_level * 0.01)))::int as true_power
+            FROM inventory i
+            JOIN characters_cache c ON i.anilist_id = c.anilist_id
+            JOIN users u ON i.user_id = u.user_id
+            WHERE i.id = $1
+        """, char_id)
+        
+        total_power += char_data['true_power']
+        team_list.append(char_data)
+    
+    return total_power, team_list
+```
+
+Returns:
+- `total_power`: Sum of all character powers
+- `team_list`: Array of 5 character objects (with `None` for empty slots)
+
+## Image Generation
+
+Teams are visualized using the `generate_team_image()` function:
+
+```python
+image_data = await generate_team_image(team_list)
+file = discord.File(fp=image_data, filename="team_banner.png")
+await ctx.reply(content=f"**Officer:** {target.name} | **Power:** {power:,}", file=file)
+```
+
+Creates a banner showing all 5 character portraits.
+
+## Usage Examples
+
+### Setting Up a Team
+
+```bash
+# Check your inventory IDs
+!inventory
+
+# Set team with 5 characters
+!st 10 25 38 42 55
+
+# Verify team composition
+!team
+```
+
+### Managing Presets
+
+```bash
+# Save current team
+!save_team arena
+
+# Create a raid team
+!st 100 105 110 115 120
+!save_team raid
+
+# Switch back to arena team
+!load_team arena
+
+# View all presets
+!presets
+```
+
+### Team Power Optimization
+
+<Tip>
+To maximize team power:
+1. Use high-dupe SSR characters (up to +50% at Lv.10)
+2. Increase team level through battles
+3. Bond with characters for battle bonuses (+2.5% at Bond 50)
+</Tip>
+
+## Error Handling
+
+### Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `❌ Duplicate IDs detected!` | Same inventory ID used twice | Use different characters |
+| `❌ You do not own one of those IDs.` | Invalid inventory ID | Check `!inventory` for valid IDs |
+| `❌ You don't have a team equipped to save.` | No active team set | Use `!st` to set a team first |
+| `❌ No preset found named 'X'.` | Preset doesn't exist | Check `!presets` for saved names |
+
+## Related Systems
+
+- [Battles](/systems/battles) - Using your team in combat
+- [Inventory](/systems/inventory) - Finding inventory IDs
+- [Economy](/systems/economy) - Team level progression

@@ -1,0 +1,415 @@
+---
+title: Setup guide
+description: Complete installation and configuration guide for Project Stardust with hosting recommendations and advanced options.
+---
+
+# Setup guide
+
+This comprehensive guide covers everything you need to deploy and configure Project Stardust.
+
+## Prerequisites
+
+- Python 3.8 or higher
+- PostgreSQL database (Supabase recommended)
+- Discord bot application
+- Git (for cloning the repository)
+
+## Installation
+
+### Clone the repository
+
+```bash
+git clone <your-repository-url>
+cd project-stardust
+```
+
+### Install dependencies
+
+Project Stardust requires the following packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+**Dependencies:**
+```txt requirements.txt
+discord.py
+python-dotenv
+aiohttp
+Pillow
+asyncpg
+```
+
+<Note>
+  Consider using a virtual environment to isolate dependencies:
+  
+  ```bash
+  python -m venv venv
+  source venv/bin/activate  # On Windows: venv\Scripts\activate
+  pip install -r requirements.txt
+  ```
+</Note>
+
+## Configuration
+
+### Environment variables
+
+Create a `.env` file in the project root with the following configuration:
+
+```bash .env
+# Required: Discord Bot Token
+DISCORD_TOKEN=your_discord_bot_token_here
+
+# Required: PostgreSQL Connection String
+DATABASE_URL=postgresql://user:password@host:5432/database
+
+# Optional: Command Prefix (default: !)
+COMMOND_PREFIX=!
+
+# Optional: Health Check Port (default: 8080)
+PORT=8080
+
+# Optional: AniList GraphQL Endpoint
+ANILIST_URL=https://graphql.anilist.co
+```
+
+<Warning>
+  **Security best practices:**
+  - Never commit `.env` files to version control
+  - Add `.env` to your `.gitignore` file
+  - Use environment variables in production environments
+  - Rotate tokens regularly
+</Warning>
+
+### Discord bot setup
+
+<Steps>
+  <Step title="Create a Discord application">
+    1. Navigate to the [Discord Developer Portal](https://discord.com/developers/applications)
+    2. Click "New Application" and give it a name
+    3. Navigate to the "Bot" section in the sidebar
+    4. Click "Add Bot" to create a bot user
+  </Step>
+  
+  <Step title="Configure bot permissions">
+    The bot requires these intents:
+    - **Server Members Intent** - To track user data
+    - **Message Content Intent** - To read commands
+    
+    Enable these in the "Bot" section under "Privileged Gateway Intents".
+  </Step>
+  
+  <Step title="Copy the bot token">
+    In the "Bot" section, click "Reset Token" and copy the new token. Add this to your `.env` file as `DISCORD_TOKEN`.
+  </Step>
+  
+  <Step title="Invite the bot to your server">
+    1. Go to the "OAuth2" → "URL Generator" section
+    2. Select scopes: `bot` and `applications.commands`
+    3. Select permissions: `Send Messages`, `Embed Links`, `Attach Files`, `Read Message History`, `Add Reactions`
+    4. Copy the generated URL and open it in your browser to invite the bot
+  </Step>
+</Steps>
+
+### Database setup
+
+Project Stardust uses PostgreSQL with automatic schema initialization.
+
+#### Using Supabase (recommended)
+
+Supabase provides free PostgreSQL hosting perfect for Discord bots:
+
+<Steps>
+  <Step title="Create a Supabase project">
+    1. Sign up at [supabase.com](https://supabase.com)
+    2. Create a new project
+    3. Wait for the database to provision
+  </Step>
+  
+  <Step title="Get connection string">
+    1. Go to Project Settings → Database
+    2. Copy the "Connection string" under "Connection pooling"
+    3. Replace `[YOUR-PASSWORD]` with your database password
+    4. Add this to your `.env` as `DATABASE_URL`
+    
+    Example format:
+    ```
+    postgresql://postgres.xxx:password@aws-0-us-east-1.pooler.supabase.com:5432/postgres
+    ```
+  </Step>
+  
+  <Step title="Configure connection pooling">
+    The bot is pre-configured for Supabase's free tier limitations:
+    
+    ```python core/database.py
+    _pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        min_size=1,         # Start with 1 connection
+        max_size=3,         # Max 3 connections
+        command_timeout=60,
+        timeout=30,
+        max_inactive_connection_lifetime=300
+    )
+    ```
+  </Step>
+</Steps>
+
+#### Self-hosted PostgreSQL
+
+If you're running your own PostgreSQL instance:
+
+```bash
+# Install PostgreSQL (Ubuntu/Debian)
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+
+# Create database and user
+sudo -u postgres psql
+CREATE DATABASE stardust;
+CREATE USER stardustbot WITH PASSWORD 'your_password';
+GRANT ALL PRIVILEGES ON DATABASE stardust TO stardustbot;
+```
+
+Connection string format:
+```
+DATABASE_URL=postgresql://stardustbot:your_password@localhost:5432/stardust
+```
+
+### Database initialization
+
+The bot automatically creates all required tables on first run:
+
+```python main.py
+await init_db()  # Creates tables: users, inventory, teams, expeditions, etc.
+```
+
+**Tables created:**
+- `users` - User profiles, currencies, and progression
+- `inventory` - Character ownership and dupe levels
+- `teams` - Active team compositions
+- `team_presets` - Saved team loadouts
+- `expeditions` - Passive gem generation
+- `characters_cache` - AniList data cache
+- `daily_tasks` - Task progress tracking
+- `achievements` - Achievement unlocks
+- `bounty_board` - Shared bounty challenges
+- `banners` - Rate-up banner configuration
+- And more...
+
+## Running the bot
+
+### Local development
+
+Start the bot directly with Python:
+
+```bash
+python main.py
+```
+
+Expected output:
+```
+🗄️  Connecting to Supabase...
+✅ Database initialized successfully.
+⚙️  Loading Modules...
+   ✅ Loaded: achievements.py
+   ✅ Loaded: admin.py
+   ✅ Loaded: battle.py
+   ✅ Loaded: bounty.py
+   ✅ Loaded: gacha.py
+   ✅ Loaded: raid.py
+   ...
+📡 Health check server live on port 8080
+--------------------------------------------------
+✨ Project Stardust is Online as: YourBotName#1234
+--------------------------------------------------
+```
+
+### Production hosting
+
+#### Render.com (recommended)
+
+Render provides free hosting for Discord bots:
+
+<Steps>
+  <Step title="Connect your repository">
+    1. Push your code to GitHub
+    2. Sign up at [render.com](https://render.com)
+    3. Click "New +" → "Web Service"
+    4. Connect your GitHub repository
+  </Step>
+  
+  <Step title="Configure the service">
+    - **Environment**: Python 3
+    - **Build Command**: `pip install -r requirements.txt`
+    - **Start Command**: `python main.py`
+    - **Instance Type**: Free
+  </Step>
+  
+  <Step title="Add environment variables">
+    In the Render dashboard, add your environment variables:
+    - `DISCORD_TOKEN`
+    - `DATABASE_URL`
+    - `COMMAND_PREFIX`
+    
+    Render automatically provides the `PORT` variable.
+  </Step>
+</Steps>
+
+<Note>
+  The bot includes a health check server on port 8080 to keep Render services active:
+  
+  ```python main.py
+  async def health_check(request):
+      return web.Response(text="Stardust is Online!")
+  ```
+</Note>
+
+#### Railway.app
+
+Railway is another excellent option:
+
+1. Connect your GitHub repository
+2. Railway auto-detects Python projects
+3. Add environment variables in the dashboard
+4. Deploy with one click
+
+#### Heroku
+
+For Heroku deployment, create a `Procfile`:
+
+```txt Procfile
+worker: python main.py
+```
+
+Then deploy:
+```bash
+heroku create your-bot-name
+heroku config:set DISCORD_TOKEN=your_token
+heroku config:set DATABASE_URL=your_database_url
+git push heroku main
+```
+
+## Advanced configuration
+
+### Cog management
+
+The bot automatically loads all cogs from the `cogs/` directory:
+
+```python main.py
+if os.path.exists('./cogs'):
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            await bot.load_extension(f'cogs.{filename[:-3]}')
+```
+
+**Available cogs:**
+- `achievements.py` - Achievement tracking
+- `admin.py` - Admin commands
+- `battle.py` - PvE and PvP battles
+- `bounty.py` - Bounty board system
+- `daily.py` - Daily tasks and rewards
+- `expedition.py` - Passive gem generation
+- `gacha.py` - Character pulling system
+- `inventory.py` - Collection management
+- `raid.py` - Raid boss battles
+- `shop.py` - Item purchasing
+- `teambuilder.py` - Team composition
+
+### Character rankings
+
+The gacha system uses a ranking file to determine character rarity:
+
+```bash
+# Update character rankings from AniList
+python scripts/update_ranks.py
+```
+
+This creates `data/rankings.json` with character popularity data.
+
+### Database optimization
+
+For high-traffic servers, adjust connection pool settings:
+
+```python core/database.py
+_pool = await asyncpg.create_pool(
+    DATABASE_URL,
+    min_size=2,          # Increase minimum connections
+    max_size=10,         # Increase maximum connections
+    command_timeout=60,
+    timeout=30
+)
+```
+
+<Warning>
+  Monitor your database connection limits. Supabase free tier allows ~15 total connections.
+</Warning>
+
+## Verification
+
+Test your bot setup:
+
+```bash
+# Basic commands
+!help              # Lists all commands
+!starter           # Claim starter character
+!pull              # Do a gacha pull
+!inventory         # View collection
+!team              # View current team
+
+# Admin commands
+!sync              # Sync slash commands
+!reload <cog>      # Reload a specific cog
+```
+
+## Troubleshooting
+
+### Common issues
+
+**Bot doesn't start:**
+- Check `DISCORD_TOKEN` is set correctly
+- Verify Python version is 3.8+
+- Ensure all dependencies are installed
+
+**Database connection fails:**
+- Verify `DATABASE_URL` format
+- Check database host is accessible
+- Confirm IP whitelist (if using Supabase)
+
+**Commands not responding:**
+- Enable "Message Content Intent" in Discord Developer Portal
+- Verify bot has "Send Messages" permission
+- Check command prefix matches your configuration
+
+**Cog loading errors:**
+- Check Python syntax in cog files
+- Verify imports are correct
+- Look for missing dependencies
+
+### Logs and debugging
+
+Enable detailed logging:
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Commands reference" icon="book" href="/commands">
+    Learn about all available bot commands and features.
+  </Card>
+  
+  <Card title="Database schema" icon="database" href="/database">
+    Understand the database structure and relationships.
+  </Card>
+  
+  <Card title="Contributing" icon="code-branch" href="/contributing">
+    Learn how to contribute to Project Stardust.
+  </Card>
+  
+  <Card title="API reference" icon="code" href="/api">
+    Explore the bot's internal API and modules.
+  </Card>
+</CardGroup>

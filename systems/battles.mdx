@@ -1,0 +1,387 @@
+---
+title: Battle System
+description: Turn-based combat with power calculations, ability triggers, NPC difficulties, and PvP
+---
+
+## Overview
+
+The battle system is a team-based combat engine that calculates power using character stats, abilities, and RNG variance. Battles can be fought against NPCs of varying difficulties or other players.
+
+## Battle Types
+
+### PvP (Player vs Player)
+
+```bash
+!battle @username
+```
+
+Fight another player's team. Both teams must be set up first.
+
+### PvE (Player vs Environment)
+
+```bash
+!battle [difficulty]
+```
+
+<ParamField path="difficulty" type="string">
+  NPC difficulty level. Options: `easy`, `normal`, `hard`, `expert`, `nightmare`, `hell`
+</ParamField>
+
+**Default**: If no target is specified, fights a Normal difficulty NPC ("Training Dummy").
+
+## NPC Difficulty Tiers
+
+NPC teams are generated based on difficulty:
+
+```python
+rules = {
+    "easy":      [("R", 1501, 10000)] * 5,
+    "normal":    [("R", 1501, 10000)] * 3 + [("SR", 251, 1500)] * 2,
+    "hard":      [("SR", 251, 1500)] * 5,
+    "expert":    [("SSR", 1, 250)] * 2 + [("SR", 251, 1500)] * 2 + [("R", 1501, 10000)] * 1,
+    "nightmare": [("SSR", 1, 250)] * 3 + [("SR", 251, 1500)] * 2,
+    "hell":      [("SSR", 1, 50)] * 2 + [("SSR", 1, 250)] * 3
+}
+```
+
+| Difficulty | Composition | Recommended Power |
+|------------|-------------|-------------------|
+| **Easy** | 5x R | 50,000+ |
+| **Normal** | 3x R, 2x SR | 100,000+ |
+| **Hard** | 5x SR | 200,000+ |
+| **Expert** | 2x SSR, 2x SR, 1x R | 350,000+ |
+| **Nightmare** | 3x SSR, 2x SR | 500,000+ |
+| **Hell** | 2x SSR (Rank 1-50), 3x SSR | 750,000+ |
+
+<Warning>
+Hell difficulty NPCs include top 50 ranked characters with extremely high power.
+</Warning>
+
+## Battle Flow
+
+Battles execute in distinct phases:
+
+```python
+# 1. INITIALIZE ENGINE
+battle_ctx = BattleContext(attacker_team, defender_team)
+all_skills = []  # Load abilities from both teams
+
+# 2. PHASE: START OF BATTLE
+for skill in all_skills:
+    await skill.on_battle_start(battle_ctx)
+
+# 3. PHASE: CALCULATION
+for side in ["attacker", "defender"]:
+    # Calculate power with modifiers
+    p = char['true_power']
+    p *= battle_ctx.multipliers[side][i]
+    p += battle_ctx.flat_bonuses[side][i]
+    p *= variance  # 0.9 to 1.1 random
+
+# 4. PHASE: RETRY CHECK
+for skill in all_skills:
+    decision = await skill.on_battle_end(battle_ctx, final_powers, outcome)
+    if decision == "RETRY": continue  # Retry ability triggered
+
+# 5. PHASE: FINALIZATION
+# Determine winner, record stats
+```
+
+## Power Calculation
+
+Final power is calculated per character:
+
+```sql
+FLOOR(
+    c.true_power 
+    * (1 + (i.dupe_level * 0.05))        -- Dupe bonus
+    * (1 + (u.team_level * 0.01))        -- Team level bonus
+    * (1 + (i.bond_level * 0.005))       -- Bond bonus
+)::int as true_power
+```
+
+### Additional Modifiers
+
+```python
+# Skill multipliers (from abilities)
+p *= battle_ctx.multipliers[side][i]
+
+# Flat bonuses (from abilities)
+p += battle_ctx.flat_bonuses[side][i]
+
+# RNG variance (0.9x to 1.1x)
+variance = random.uniform(0.9, 1.1)
+p *= variance
+```
+
+### Full Calculation Example
+
+```python
+# Base stats
+true_power = 100,000
+dupe_level = 6      # +30%
+team_level = 20     # +20%
+bond_level = 10     # +5%
+
+# Base calculation
+p = 100000 * (1 + 0.30) * (1 + 0.20) * (1 + 0.05)
+p = 100000 * 1.30 * 1.20 * 1.05
+p = 163,800
+
+# Apply skill multiplier (example: +25%)
+p *= 1.25
+p = 204,750
+
+# Apply flat bonus (example: +10,000)
+p += 10,000
+p = 214,750
+
+# Apply variance (example: 1.05x)
+p *= 1.05
+final_power = 225,487
+```
+
+## Battle Context
+
+The `BattleContext` class manages battle state:
+
+```python
+class BattleContext:
+    def __init__(self, attacker_team, defender_team):
+        self.attacker_team = attacker_team
+        self.defender_team = defender_team
+        self.multipliers = {"attacker": [1.0]*5, "defender": [1.0]*5}
+        self.flat_bonuses = {"attacker": [0]*5, "defender": [0]*5}
+        self.logs = {"attacker": {}, "defender": {}}
+        self.misc_logs = {"attacker": [], "defender": []}
+        self.flags = {}  # For ability state tracking
+```
+
+### Methods
+
+- `get_team(side)`: Returns team array for "attacker" or "defender"
+- `add_log(side, idx, message)`: Adds a combat log entry
+- Stores multipliers, bonuses, and flags for ability interactions
+
+## Ability System
+
+Abilities are loaded from character `ability_tags` and executed at specific phases.
+
+### Ability Loading
+
+```python
+def load_skills(team, side):
+    for i, char in enumerate(team):
+        tags = char.get('ability_tags', [])
+        for tag in tags:
+            skill = create_skill_instance(tag, char, i, side)
+            if skill: all_skills.append(skill)
+
+load_skills(attacker_team, "attacker")
+load_skills(defender_team, "defender")
+all_skills.sort(key=lambda s: s.priority, reverse=True)
+```
+
+### Skill Phases
+
+| Phase | Method | Purpose |
+|-------|--------|----------|
+| **Battle Start** | `on_battle_start()` | Apply buffs, set flags |
+| **Power Calc** | `get_power_modifier()` | Return multiplier (e.g., 1.25 for +25%) |
+| **Post-Calc** | `on_post_power_calculation()` | Modify final power arrays |
+| **Battle End** | `on_battle_end()` | Trigger retries, force outcomes |
+
+<Tip>
+Skills execute in **priority order** (highest first). Most abilities have priority 100.
+</Tip>
+
+## Retry Mechanics
+
+Some abilities (like "The Almighty") can retry battles:
+
+```python
+for skill in all_skills:
+    decision = await skill.on_battle_end(battle_ctx, final_powers, outcome)
+    if decision == "RETRY":
+        retry_requested = True
+        # Restore battle state and re-run calculation
+        continue
+```
+
+**Retry Flow**:
+1. Battle calculates normally
+2. If loss detected, retry ability checks conditions
+3. If triggered, logs are saved and state is restored
+4. Battle re-runs with new RNG variance
+5. Max 20 total attempts to prevent infinite loops
+
+```python
+max_total_attempts = 20
+while current_attempt < max_total_attempts:
+    # Battle calculation
+    if retry_requested:
+        battle_ctx.logs = copy.deepcopy(logs_snapshot)
+        continue
+    else:
+        break
+```
+
+<Note>
+Retry messages are collected and displayed at the end of combat logs.
+</Note>
+
+## Victory Conditions
+
+Winner is determined by total team power:
+
+```python
+final_team_totals = {
+    "attacker": sum(final_powers["attacker"]),
+    "defender": sum(final_powers["defender"])
+}
+
+outcome = "WIN" if final_team_totals["attacker"] > final_team_totals["defender"] else "LOSS"
+```
+
+Abilities can override the outcome:
+
+```python
+decision = await skill.on_battle_end(battle_ctx, final_powers, outcome)
+if decision and decision != "RETRY":
+    outcome = decision  # Force "WIN" or "LOSS"
+```
+
+## Battle Output
+
+### Embed Structure
+
+```python
+embed = discord.Embed(
+    title=f"⚔️ {ctx.author.display_name} vs {defender_name}",
+    description=f"🏆 **Winner: {winner_name}**",
+    color=0x5865F2 if win_idx == 1 else 0xED4245
+)
+
+embed.add_field(name=f"🔵 {ctx.author.display_name}", 
+                value=f"Total: **{int(final_team_totals['attacker']):,}**")
+embed.add_field(name=f"🔴 {defender_name}", 
+                value=f"Total: **{int(final_team_totals['defender']):,}**")
+```
+
+### Combat Logs
+
+Displays up to 20 log entries per side:
+
+```python
+atk_logs = [l for slot in battle_ctx.logs["attacker"].values() for l in slot] \
+         + battle_ctx.misc_logs["attacker"]
+
+if atk_logs:
+    log_display = "\n".join(atk_logs[:20])
+    embed.add_field(name="🔹 Attacker Highlights", value=log_display, inline=False)
+```
+
+### Battle Image
+
+```python
+img_bytes = await generate_battle_image(
+    attacker_team, defender_team, 
+    ctx.author.display_name, defender_name, 
+    winner_idx=1 if outcome == "WIN" else 2
+)
+file = discord.File(fp=img_bytes, filename="battle.png")
+embed.set_image(url="attachment://battle.png")
+```
+
+## Daily Task Tracking
+
+Battles record progress for daily tasks:
+
+```python
+task_key = "pvp" if isinstance(target, discord.Member) else difficulty
+
+await pool.execute("""
+    INSERT INTO daily_tasks (user_id, task_key, progress, last_updated, is_claimed)
+    VALUES ($1, $2, 1, CURRENT_DATE, FALSE)
+    ON CONFLICT (user_id, task_key) 
+    DO UPDATE SET progress = 1, last_updated = CURRENT_DATE
+    WHERE daily_tasks.last_updated < CURRENT_DATE
+""", attacker_id, task_key)
+```
+
+Task keys:
+- `pvp`: Player vs Player battles
+- `easy`, `normal`, `hard`, `expert`, `nightmare`, `hell`: PvE difficulties
+
+## Special Boss Battles
+
+Defeating specific users records achievements:
+
+```python
+if final_outcome == "WIN" and target.id == 1463071276036788392:
+    await pool.execute("""
+        INSERT INTO boss_kills (user_id, boss_id) 
+        VALUES ($1, $2) 
+        ON CONFLICT DO NOTHING
+    """, attacker_id, str(target.id))
+```
+
+## Examples
+
+### Basic PvE Battle
+
+```bash
+!battle normal
+```
+
+**Output**:
+```
+⚔️ PlayerName vs Normal NPC
+🏆 Winner: PlayerName
+
+🔵 PlayerName
+Total: 287,450
+
+🔴 Normal NPC
+Total: 195,820
+
+🔹 Attacker Highlights
+• Slot 1: Applied +25% power boost
+• Slot 3: Critical strike!
+```
+
+### PvP Battle
+
+```bash
+!battle @opponent
+```
+
+```
+⚔️ PlayerName vs OpponentName
+🏆 Winner: OpponentName
+
+🔵 PlayerName
+Total: 320,500
+
+🔴 OpponentName
+Total: 348,750
+
+🔸 Defender Highlights
+• Slot 2: The Almighty - Rejected this outcome!
+• Slot 2: Rewriting this future...
+• Slot 2: I have run out of futures... this is the only path.
+```
+
+## Error Handling
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `❌ Your team is empty!` | No team set | Use `!team` to set up your team |
+| `❌ {User} does not have a team set up.` | Opponent has no team | Ask them to set a team first |
+| `❌ Invalid difficulty.` | Typo in difficulty name | Use valid difficulty from list |
+
+## Related Systems
+
+- [Teams](/systems/teams) - Building your battle team
+- [Inventory](/systems/inventory) - Character stats and bonuses
+- [Gacha](/systems/gacha) - Obtaining powerful characters

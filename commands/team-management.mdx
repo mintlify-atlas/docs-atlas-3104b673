@@ -1,0 +1,320 @@
+---
+title: Team Management Commands
+description: Build, customize, and manage your battle teams in Project Stardust
+---
+
+## Team Basics
+
+You maintain **two separate teams**:
+- **Battle Team** - Used for PVP and NPC battles
+- **Expedition Team** - Used for passive gem generation
+
+Teams can hold up to **5 characters** each.
+
+---
+
+## Battle Team Commands
+
+### set_team_battle
+
+Set your active battle team using character inventory IDs.
+
+```bash
+!set_team_battle <id1> [id2] [id3] [id4] [id5]
+```
+
+<ParamField path="id1" type="integer" required>
+  First character's inventory ID (required)
+</ParamField>
+
+<ParamField path="id2-id5" type="integer">
+  Additional character IDs (optional, up to 5 total)
+</ParamField>
+
+**Aliases:** `stb`, `sbt`, `st`
+
+**Examples:**
+```bash
+!stb 123              # Set 1 character
+!stb 123 456 789      # Set 3 characters  
+!stb 1 2 3 4 5        # Full team of 5
+!sbt 99 88 77 66 55   # Using alias
+```
+
+**Rules:**
+- IDs must be from your inventory
+- No duplicate IDs allowed
+- Characters must be owned by you
+- Order matters (left to right positioning)
+
+<Note>
+You can find character IDs by using `!inventory` - they appear as `#ID` before each character name.
+</Note>
+
+### team
+
+View your current battle team or another user's team.
+
+```bash
+!team [user]
+```
+
+<ParamField path="user" type="@mention">
+  Discord user to view. Defaults to yourself.
+</ParamField>
+
+**Displays:**
+- Team composition with character images
+- Total team power
+- Character names and rarities
+- Visual banner image
+
+**Examples:**
+```bash
+!team              # View your team
+!team @username    # View another player's team
+```
+
+---
+
+## Team Builder Interface
+
+### teambuilder
+
+Open an interactive visual team builder with filters and pagination.
+
+```bash
+!teambuilder
+```
+
+**Aliases:** `tb`
+
+**Features:**
+
+#### Rarity Filter
+- Filter by SSR, SR, R, or show all
+- Updates available characters dynamically
+
+#### Unit Selection
+- Browse your inventory (25 per page)
+- See power, dupe level, and rarity
+- Visual checkmarks show already-selected units
+
+#### Team Management
+- Add up to 5 characters
+- Remove characters from team
+- Clear entire team
+
+#### Command Generation
+- Auto-generates `!stb` command for battle team
+- Auto-generates `!se` command for expedition team
+- Copy and paste ready
+
+**Example Workflow:**
+1. Run `!tb` to open the builder
+2. Use the filter dropdown to show only SSR characters
+3. Select 5 characters from the list
+4. Copy the generated command: `!stb 123 456 789 101 112`
+5. Paste and run the command to set your team
+
+<Tip>
+The team builder is especially useful when you have a large inventory and want to filter by rarity or compare stats.
+</Tip>
+
+---
+
+## Team Presets
+
+Save and load multiple team configurations for different situations.
+
+### save_team
+
+Save your **current active team** to a named preset.
+
+```bash
+!save_team <name>
+```
+
+<ParamField path="name" type="string" required>
+  Preset name (max 15 characters)
+</ParamField>
+
+**Examples:**
+```bash
+!save_team pvp        # Save for PVP battles
+!save_team tank       # Save a defensive team
+!save_team dps        # Save an offensive team
+```
+
+**Rules:**
+- Name is case-insensitive and normalized to lowercase
+- Overwrites existing preset with same name
+- Must have an active team set first
+
+### load_team
+
+Load a saved preset as your active battle team.
+
+```bash
+!load_team <name>
+```
+
+**Aliases:** `equip_team`
+
+<ParamField path="name" type="string" required>
+  Name of the preset to load
+</ParamField>
+
+**Examples:**
+```bash
+!load_team pvp           # Load your PVP preset
+!equip_team tank         # Load your tank preset
+```
+
+### presets
+
+View all your saved team presets with character details.
+
+```bash
+!presets
+```
+
+**Display Format:**
+- Shows 6 presets per page
+- Lists all 5 characters in each preset
+- Character names shown (truncated if long)
+- Empty slots shown as `--`
+- Navigate with Previous/Next buttons
+
+**Example Output:**
+```
+📁 Team Presets
+
+🔹 PVP
+`Kirito`
+`Asuna` 
+`Leafa`
+`Sinon`
+`Yuuki`
+
+🔹 TANK
+`--`
+`--`
+`Shield Hero`
+`--`
+`--`
+```
+
+<Tip>
+**Organize your presets:** Create presets for different difficulties (Easy, Hard, Hell) or strategies (Tank, DPS, Balanced).
+</Tip>
+
+---
+
+## Expedition Team
+
+### set_expedition
+
+Assign characters to your expedition team for passive gem generation.
+
+```bash
+!set_expedition <id1> [id2] [id3] [id4] [id5]
+```
+
+**Aliases:** `se`
+
+<ParamField path="id1-id5" type="integer">
+  Character inventory IDs (up to 5)
+</ParamField>
+
+**Examples:**
+```bash
+!se 10 20 30 40 50    # Set 5 characters
+!se 100               # Set just 1 character
+```
+
+**Key Differences from Battle Team:**
+- Used only for expeditions (passive gem generation)
+- Can include different characters than your battle team
+- Certain skills only work in expeditions (e.g., "Hardworker")
+
+<Note>
+Expedition and battle teams are completely separate. You can use the same characters in both if desired.
+</Note>
+
+See [Expedition Commands](/commands/progression#expeditions) for expedition mechanics.
+
+---
+
+## Team Strategy
+
+### Positioning Matters
+
+Character order affects battle outcomes:
+
+**Battle System:**
+- Leftmost characters take damage first in raids
+- Skills may target specific positions
+- Some boss attacks sweep left-to-right
+
+**Recommendations:**
+- **Slot 1-2:** High HP tanks (SSR with high power)
+- **Slot 3:** Support or balanced character
+- **Slot 4-5:** DPS characters or skill-focused units
+
+### Team Composition Tips
+
+<Tip>
+**Balanced Teams:** Mix rarities to maximize team abilities while maintaining power. Some SR/R characters have powerful skills.
+</Tip>
+
+<Tip>
+**Skill Synergy:** Certain skills work better together. Check character abilities with `!view <id>` before building teams.
+</Tip>
+
+<Tip>
+**Dupe Priority:** Focus dupes on your main team characters for the +5% power bonus per dupe level.
+</Tip>
+
+### Power Calculation
+
+Team power includes:
+- Individual character base power
+- Dupe bonuses (+5% per dupe, max 10 dupes)
+- Bond bonuses (+0.5% per level, max 50)
+- Team level bonus (+1% per level, applies globally)
+
+---
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Can I use the same character in both battle and expedition teams?">
+    Yes! The teams are completely independent. You can use the same characters in both.
+  </Accordion>
+  
+  <Accordion title="What happens if I set fewer than 5 characters?">
+    Your team will simply have empty slots. This is allowed but not recommended for harder content.
+  </Accordion>
+  
+  <Accordion title="Do I need to set a team to play?">
+    Yes, you need at least one character in your battle team to use battle commands. Expeditions also require a team.
+  </Accordion>
+  
+  <Accordion title="How do I see character IDs?">
+    Use `!inventory` to see all your characters with their IDs shown as `#123` before each name.
+  </Accordion>
+  
+  <Accordion title="Can I save more than one preset?">
+    Yes! You can save unlimited presets with different names. Use `!presets` to view them all.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Related Commands
+
+- [`!inventory`](/commands/progression#inventory) - Find character IDs
+- [`!view`](/commands/progression#view) - Check character skills
+- [`!battle`](/commands/battle) - Use your team in combat
+- [`!expedition`](/commands/progression#expedition) - Start expeditions

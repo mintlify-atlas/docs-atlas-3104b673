@@ -1,0 +1,416 @@
+---
+title: Achievements
+description: Unlock badges and earn rewards by completing milestones and challenges
+---
+
+## Overview
+
+The Achievement System tracks your progress across all game features and rewards you with exclusive badges, gems, and coins when you hit milestones.
+
+<Info>
+Achievements are checked automatically after every command - you don't need to manually claim them!
+</Info>
+
+## How Achievements Work
+
+### Automatic Detection
+
+The bot checks for new achievements after **every command you run**:
+
+1. You complete an action (pull gacha, win a battle, etc.)
+2. The system checks all achievement conditions
+3. If you qualify for a new achievement, you're notified instantly
+4. Rewards are automatically added to your account
+
+<Note>
+You can't miss achievements - they'll be detected as soon as you meet the requirements!
+</Note>
+
+## Viewing Achievements
+
+### View Your Badges
+
+```
+!achievements
+```
+
+Aliases: `!ach`, `!badges`
+
+**View another player's achievements:**
+```
+!achievements @username
+```
+
+This opens an interactive viewer with two display modes:
+
+<CardGroup cols={2}>
+  <Card title="📛 Badge View" icon="trophy">
+    Visual wall of all badge emotes. Unlocked badges shown in full color, locked badges show as 🔒.
+  </Card>
+  
+  <Card title="📜 List View" icon="list">
+    Detailed list with achievement names, descriptions, and unlock status.
+  </Card>
+</CardGroup>
+
+### Navigation Controls
+
+The achievement viewer includes interactive buttons:
+
+- **◀️ Previous**: Go to the previous page
+- **📜 List / 📛 Badges**: Toggle between badge wall and detailed list
+- **▶️ Next**: Go to the next page
+
+<Tip>
+Click the **📜 List** button to see achievement requirements and which ones you still need!
+</Tip>
+
+## Achievement Categories
+
+Achievements span all major game features:
+
+### Gacha Achievements
+
+Tracking your gacha pulls and collection progress.
+
+**Examples:**
+- First pull milestone
+- Pulling specific rarities
+- Collection size milestones
+
+### Battle Achievements
+
+Based on PvP battles and win streaks.
+
+**Examples:**
+- Win your first battle
+- Reach win streaks
+- Complete X total battles
+
+### Raid Achievements
+
+Tracking raid participation and damage milestones.
+
+**Examples:**
+- Deal X total damage
+- Survive X turns
+- Participate in raids
+
+### Bounty Achievements
+
+Based on bounty completions and boss kills.
+
+**Examples:**
+- **R_TAKEDOWN**: Defeat an R Tier bounty
+- **SR_TAKEDOWN**: Defeat an SR Tier bounty
+- **SSR_TAKEDOWN**: Defeat an SSR Tier bounty
+- **UR_TAKEDOWN**: Defeat a UR Tier bounty
+- **VETERAN_HUNTER**: Complete X bounties
+
+### Collection Achievements
+
+Tracking your character collection size and diversity.
+
+**Examples:**
+- Own X characters
+- Own all characters from a series
+- Own characters of specific rarities
+
+### Progression Achievements
+
+Tracking long-term progression metrics.
+
+**Examples:**
+- Reach Team Level X
+- Earn X total gems
+- Complete expeditions
+
+## Rewards
+
+Each achievement grants rewards upon unlock:
+
+<CardGroup cols={3}>
+  <Card title="Badge Emote" icon="medal">
+    Unique emote displayed in your achievement collection.
+  </Card>
+  
+  <Card title="Gems" icon="gem">
+    Premium currency for gacha pulls.
+  </Card>
+  
+  <Card title="Coins" icon="coins">
+    Currency for shop purchases.
+  </Card>
+</CardGroup>
+
+<Note>
+Reward amounts vary by achievement difficulty and rarity.
+</Note>
+
+## Unlock Notification
+
+When you unlock an achievement, you'll receive an embed notification:
+
+```yaml
+🏆 Achievement Unlocked!
+
+Congratulations @Player!
+You earned the First Blood badge.
+
+Badge: 🩸
+Rewards: 100 💎 | 50 🪙
+```
+
+<Info>
+Notifications appear in the same channel where you completed the qualifying action.
+</Info>
+
+## Achievement Viewer Layout
+
+### Badge Wall Page
+
+Displays badge emotes in a compact grid:
+
+```
+🏆 Player's Hall of Fame
+
+🩸 ⚔️ 💎 🔒 🔒 🔒 🔒 🔒 🔒 🔒
+🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒
+🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒 🔒
+
+View: Badges (Page 1/5)
+Unlocked: 3/50
+```
+
+### List View Page
+
+Displays detailed achievement info:
+
+```
+🏆 Player's Hall of Fame
+
+✅ First Blood
+╚ Win your first PvP battle.
+
+✅ Gacha Addict
+╚ Perform 100 gacha pulls.
+
+🔒 Master Collector
+╚ Own 500 characters.
+
+View: Details (Page 1/5)
+Unlocked: 2/3
+```
+
+<Tip>
+Locked achievements show their requirements - use them as goals to work toward!
+</Tip>
+
+## Tracking Your Progress
+
+The system tracks various metrics behind the scenes:
+
+- **Total pulls**: Gacha summons across all banners
+- **Battle wins**: PvP victories
+- **Boss kills**: Unique boss IDs defeated
+- **Bounty completions**: Total bounty victories
+- **Expedition gems**: Total gems earned from expeditions
+- **Characters owned**: Unique characters in inventory
+
+<Note>
+These trackers are managed by the `Tracker` system and update automatically.
+</Note>
+
+## Example Achievement Flow
+
+<Steps>
+  <Step title="Complete an Action">
+    You defeat an SSR Tier bounty using `!hunt`.
+  </Step>
+  
+  <Step title="Automatic Check">
+    The `on_command_completion` listener triggers.
+    
+    Achievement engine checks:
+    - Do you have the SSR_TAKEDOWN achievement?
+    - No → Unlock it!
+  </Step>
+  
+  <Step title="Unlock Notification">
+    ```yaml
+    🏆 Achievement Unlocked!
+    
+    Congratulations @Player!
+    You earned the SSR Slayer badge.
+    
+    Badge: 💠
+    Rewards: 500 💎 | 250 🪙
+    ```
+  </Step>
+  
+  <Step title="Rewards Granted">
+    - 500 gems added to your account
+    - 250 coins added to your account
+    - Badge appears in `!achievements`
+  </Step>
+</Steps>
+
+## Achievement Engine
+
+Achievements are defined in `core/achievements.py` using the `Achievement` class:
+
+```python
+class Achievement:
+    def __init__(self, id, name, description, badge_emote, 
+                 gem_reward, coin_reward):
+        ...
+```
+
+The `AchievementEngine` handles:
+- Checking all registered achievements
+- Detecting newly qualified achievements
+- Granting rewards
+- Preventing duplicate unlocks
+
+<Info>
+Achievement checks are optimized to run quickly and not impact command performance.
+</Info>
+
+## Badge Emote System
+
+Each achievement has a unique badge emote:
+
+- Emotes are stored in the `Emotes` class
+- The unachieved lock emote is `Emotes.UNACHIEVED`
+- Badges can be custom Discord emotes or Unicode emojis
+
+**Example Badge Emotes:**
+- 🩸 First Blood
+- ⚔️ Battle Master
+- 💎 Gacha God
+- 🏆 Ultimate Collector
+
+<Warning>
+If a badge emote is missing or invalid, it may display as `:emote_name:` text.
+</Warning>
+
+## Pagination System
+
+The achievement viewer automatically paginates large collections:
+
+- **Badge Pages**: Chunked by 4000 characters (Discord description limit)
+- **List Pages**: 10 achievements per page
+- **Total Pages**: Badge pages + List pages
+
+### Button States
+
+- **Prev Button**: Disabled on first page
+- **Next Button**: Disabled on last page
+- **Jump Button**: Toggles label based on current mode
+
+<Tip>
+The pagination system prevents you from navigating past the first or last page.
+</Tip>
+
+## Interaction Checks
+
+Only the command author can use the achievement viewer buttons:
+
+```python
+if interaction.user.id != self.ctx.author.id:
+    return await interaction.response.send_message(
+        "This is not your achievement viewer!", 
+        ephemeral=True
+    )
+```
+
+This prevents other users from interfering with your navigation.
+
+## View Timeout
+
+The interactive viewer has a **60 second timeout**:
+
+- After 60 seconds of inactivity, buttons become disabled
+- The embed remains visible but is no longer interactive
+- Run `!achievements` again to get a new interactive viewer
+
+<Note>
+The timeout helps reduce memory usage and prevent stale interactions.
+</Note>
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Can I claim achievements manually?" icon="question">
+    No, achievements are automatically detected and claimed after every command. There's no manual claim process.
+  </Accordion>
+  
+  <Accordion title="Do I need to use !achievements to unlock them?" icon="question">
+    No, the `!achievements` command only displays your progress. Unlocks happen automatically during gameplay.
+  </Accordion>
+  
+  <Accordion title="Can achievements be lost or revoked?" icon="question">
+    No, once unlocked, achievements are permanent and cannot be lost.
+  </Accordion>
+  
+  <Accordion title="What if I meet multiple achievement requirements at once?" icon="question">
+    You'll receive separate notification embeds for each achievement unlocked in sequence.
+  </Accordion>
+  
+  <Accordion title="Can I see hidden achievement requirements?" icon="question">
+    No, currently all achievements show their requirements in the list view. There are no hidden achievements.
+  </Accordion>
+</AccordionGroup>
+
+## Strategy Tips
+
+<CardGroup cols={2}>
+  <Card title="Check Regularly" icon="eye">
+    Use `!achievements` to see which milestones you're close to completing.
+  </Card>
+  
+  <Card title="Diversify Activities" icon="list-check">
+    Achievements span all features - don't focus on just one game mode.
+  </Card>
+  
+  <Card title="Track Bounty Bosses" icon="crosshairs">
+    Boss kill achievements (R/SR/SSR/UR_TAKEDOWN) are one-time unlocks - complete them all!
+  </Card>
+  
+  <Card title="Use as Goals" icon="target">
+    Locked achievements with visible requirements make great long-term goals.
+  </Card>
+</CardGroup>
+
+## Technical Details
+
+### Database Storage
+
+Achievements are stored in the `achievements` table:
+
+```sql
+CREATE TABLE achievements (
+    user_id TEXT,
+    achievement_id TEXT,
+    unlocked_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (user_id, achievement_id)
+);
+```
+
+### Listener Hook
+
+The `on_command_completion` listener is registered on the Achievement cog:
+
+```python
+@commands.Cog.listener()
+async def on_command_completion(self, ctx):
+    if ctx.author.bot: return
+    new_unlocks = await AchievementEngine.process_all(
+        str(ctx.author.id)
+    )
+    # Send notifications...
+```
+
+<Info>
+This listener fires after every successful command execution.
+</Info>
