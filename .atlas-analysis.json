@@ -1,0 +1,94 @@
+{
+  "projectType": "general",
+  "projectName": "Project Stardust",
+  "projectDescription": "A Discord bot featuring anime character gacha, team battles, raids, and progression systems",
+  "theme": "maple",
+  "primaryColor": "#9B59B6",
+  "lightColor": "#E8DAEF",
+  "darkColor": "#6C3483",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "setup"
+            ]
+          },
+          {
+            "group": "Core Systems",
+            "pages": [
+              "systems/gacha",
+              "systems/teams",
+              "systems/battles",
+              "systems/inventory",
+              "systems/economy"
+            ]
+          },
+          {
+            "group": "Game Features",
+            "pages": [
+              "features/raids",
+              "features/expeditions",
+              "features/bounties",
+              "features/achievements",
+              "features/shop"
+            ]
+          },
+          {
+            "group": "Technical",
+            "pages": [
+              "technical/architecture",
+              "technical/database",
+              "technical/skills-system"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Commands",
+        "groups": [
+          {
+            "group": "Command Reference",
+            "pages": [
+              "commands/overview",
+              "commands/gacha",
+              "commands/team-management",
+              "commands/battle",
+              "commands/progression"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Gacha system with character summoning from AniList API",
+    "Team building with 5-slot formations",
+    "Turn-based battle system with skills and abilities",
+    "Raid bosses with cooperative gameplay",
+    "Expedition system for passive resource generation",
+    "Economy system with gems and coins",
+    "Character progression with dupes and bonds",
+    "Daily tasks and achievements",
+    "Shop system with rotating inventory",
+    "Banner system with rate-ups and spark pity"
+  ],
+  "publicApiSurface": [
+    "!pull / !summon - Pull characters from gacha",
+    "!team - View team composition",
+    "!set_team_battle - Configure battle team",
+    "!battle - Initiate team battles",
+    "!raid - Challenge raid bosses",
+    "!expedition - Manage passive expeditions",
+    "!inventory - View owned characters",
+    "!shop - Access the daily shop",
+    "!bounty - View bounty board",
+    "!daily - Claim daily rewards",
+    "!help - Display command help"
+  ]
+}
