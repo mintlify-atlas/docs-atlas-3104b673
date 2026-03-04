@@ -71,7 +71,8 @@
               "commands/gacha",
               "commands/team-management",
               "commands/battle",
-              "commands/progression"
+              "commands/progression",
+              "commands/utility"
             ]
           }
         ]

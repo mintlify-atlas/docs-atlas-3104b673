@@ -1,0 +1,209 @@
+---
+title: Utility commands
+description: Search characters, explore skills, and lookup game information
+---
+
+Utility commands help you explore the game's content, search for specific characters with skills, and look up detailed information about game mechanics.
+
+## Character Search
+
+### whohas
+
+Search for all characters that possess a specific skill (case-insensitive).
+
+```bash
+!whohas [skill name]
+```
+
+<ParamField path="skill name" type="string" required>
+  The name of the skill to search for (e.g., "Lucky 7", "The Almighty")
+</ParamField>
+
+**Aliases:** `usersof`, `skillsearch`
+
+**Example:**
+```bash
+!whohas Lucky 7
+```
+
+**Output:**
+- Lists all characters with that skill
+- Shows character name and rarity
+- Limits display to first 20 results for long lists
+
+### lookup
+
+Search for a character by name and view their complete stats including rarity, power, and skills.
+
+```bash
+!lookup [character name]
+```
+
+<ParamField path="character name" type="string" required>
+  The name of the character to search for (uses AniList search)
+</ParamField>
+
+**Example:**
+```bash
+!lookup Gojo Satoru
+```
+
+**How it works:**
+1. Searches AniList API for the character
+2. Checks database cache for stats
+3. Falls back to rankings file for accurate rarity assignment
+4. Displays comprehensive character card with:
+   - Character image
+   - AniList ID
+   - Favorites count
+   - Rarity (SSR/SR/R)
+   - Base power
+   - All skills/abilities
+   - AniList profile link
+
+<Note>
+  The lookup command uses the same ranking system as the gacha, so the rarity shown will match what you'd get if you pull that character.
+</Note>
+
+## Skills Database
+
+### skills
+
+Browse all available skills in the game with a paginated menu showing 5 skills per page.
+
+```bash
+!skills
+```
+
+**Aliases:** `sl`
+
+**Display includes:**
+- Skill name
+- Description
+- Type (Battle/Expedition/Global)
+- Attributes (Stackable, Overlap OK, or Unique)
+- Page navigation buttons
+
+**Example output:**
+```
+✨ Character Skills
+List of battle/expedition abilities.
+
+**Lucky 7**
+Grants 7x power if slot position equals 7 mod team size.
+*[Battle] Unique*
+
+**The Almighty**
+Can rewrite losing battles into winning ones (limited retries).
+*[Battle] Unique*
+```
+
+Use the Previous/Next buttons to navigate through all skills.
+
+### skill_details
+
+View detailed information about a specific skill, including its raw value and implementation details.
+
+```bash
+!skill_details [skill name]
+!sd [skill name]
+!sd
+```
+
+<ParamField path="skill name" type="string">
+  The name of the skill (optional - omit to use dropdown selector)
+</ParamField>
+
+**Aliases:** `sd`, `skillinfo`
+
+**Two modes:**
+
+1. **Text Search Mode:** Specify a skill name directly
+   ```bash
+   !sd The Almighty
+   ```
+
+2. **Dropdown Mode:** Use without arguments to see an interactive dropdown
+   ```bash
+   !sd
+   ```
+
+**Display includes:**
+- Skill name and description
+- Type (Battle/Expedition/Global)
+- Attributes (Stackable/Overlap)
+- Raw value (actual multiplier or formula used)
+
+<Tip>
+  Use `!skills` first to browse available skills, then `!sd [name]` to get detailed stats on specific ones.
+</Tip>
+
+## Common Use Cases
+
+<AccordionGroup>
+  <Accordion title="Finding characters for team synergy">
+    Use `!whohas` to find all characters with a specific skill:
+    
+    ```bash
+    !whohas Hardworker
+    ```
+    
+    This shows all characters with the "Hardworker" skill, which boosts expedition yields. Great for building specialized teams!
+  </Accordion>
+
+  <Accordion title="Checking if a character is worth pulling">
+    Use `!lookup` before spending gems:
+    
+    ```bash
+    !lookup Makima
+    ```
+    
+    This shows the character's rarity, base power, and skills so you can decide if they fit your team strategy.
+  </Accordion>
+
+  <Accordion title="Understanding skill mechanics">
+    Combine `!skills` and `!sd` to learn how abilities work:
+    
+    ```bash
+    !skills          # Browse all skills
+    !sd Lucky 7      # Get detailed info on specific skill
+    ```
+    
+    The raw value field shows the exact multiplier or condition used in calculations.
+  </Accordion>
+
+  <Accordion title="Building themed teams">
+    Search for characters from specific series:
+    
+    ```bash
+    !lookup Naruto
+    !lookup Luffy
+    !lookup Goku
+    ```
+    
+    Each lookup shows skills, letting you plan team compositions with complementary abilities.
+  </Accordion>
+</AccordionGroup>
+
+## Tips
+
+- **Skill names are case-insensitive** - `!whohas lucky 7` works just as well as `!whohas Lucky 7`
+- **Partial matches work in lookup** - The AniList search is fuzzy, so "Gojo" will find "Gojo Satoru"
+- **Skills list shows 5 per page** - There are 70+ skills total, use Previous/Next buttons to browse
+- **Raw values are technical** - The "value" field in `!sd` shows the actual code parameter (e.g., `1.5` for a 50% boost)
+- **Dropdown has 25 skill limit** - Use text mode `!sd [name]` for skills beyond the first 25
+
+## Skill Types Explained
+
+| Type | Where it applies | Example |
+|------|-----------------|---------|
+| **Battle** | PVP and NPC battles | The Almighty, Lucky 7, Squash |
+| **Expedition** | Passive gem farming | Hardworker, Master of Coin, The Long Road |
+| **Global** | All contexts | (Currently none implemented) |
+
+## Related Commands
+
+- [`!view`](/commands/progression#view) - Check skills on characters you own
+- [`!inventory`](/commands/progression#inventory) - See your character collection
+- [`!team`](/commands/team-management#team) - View your current team setup
+- [`!battle`](/commands/battle) - Use skills in combat
